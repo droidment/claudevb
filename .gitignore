@@ -1,0 +1,18 @@
+# Ignore everything in the tournament_app directory
+tournament_app/*
+
+# But don't ignore the lib and web directories
+!tournament_app/lib
+!tournament_app/web
+!tournament_app/pubspec.yaml
+!tournament_app/pubspec.lock
+!tournament_app/analysis_options.yaml
+!tournament_app/README.md
+
+# Ignore IDE specific files
+.idea/
+*.iml
+.claude/
+
+# Ignore other files
+setup_database.js
