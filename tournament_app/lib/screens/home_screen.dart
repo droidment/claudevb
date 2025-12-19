@@ -4,6 +4,7 @@ import '../models/user_profile.dart';
 import 'tournaments/organize_screen.dart';
 import 'tournaments/tournaments_list_screen.dart';
 import 'tournaments/join_by_invite_screen.dart';
+import 'teams/teams_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -204,28 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMyTeamsContent() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.groups, size: 80, color: Colors.blue),
-          const SizedBox(height: 16),
-          const Text('My Teams'),
-          const SizedBox(height: 8),
-          const Text('Manage your teams and rosters'),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Team management coming soon!')),
-              );
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Create Team'),
-          ),
-        ],
-      ),
-    );
+    return const TeamsListScreen();
   }
 
   Widget _buildOrganizeContent() {
