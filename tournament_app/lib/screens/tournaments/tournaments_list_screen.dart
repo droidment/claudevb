@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../models/tournament.dart';
 import '../../services/tournament_service.dart';
 import 'tournament_detail_screen.dart';
+import 'join_by_invite_screen.dart';
 
 class TournamentsListScreen extends StatefulWidget {
   const TournamentsListScreen({super.key});
@@ -322,6 +323,17 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
         title: const Text('Browse Tournaments'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.vpn_key),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const JoinByInviteScreen(),
+                ),
+              );
+            },
+            tooltip: 'Join by Invite Code',
+          ),
           IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: _showFilterDialog,

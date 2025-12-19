@@ -3,6 +3,7 @@ import '../services/auth_service.dart';
 import '../models/user_profile.dart';
 import 'tournaments/organize_screen.dart';
 import 'tournaments/tournaments_list_screen.dart';
+import 'tournaments/join_by_invite_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -139,6 +140,27 @@ class _HomeScreenState extends State<HomeScreen> {
             ).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 48),
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 24),
+            color: Colors.orange.shade50,
+            child: ListTile(
+              leading: Icon(Icons.vpn_key, color: Colors.orange.shade700),
+              title: const Text(
+                'Join Private Tournament',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: const Text('Have an invite code? Join here'),
+              trailing: const Icon(Icons.arrow_forward),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const JoinByInviteScreen(),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
           if (_userProfile?.isCaptain == true) ...[
             Card(
               margin: const EdgeInsets.symmetric(horizontal: 24),
