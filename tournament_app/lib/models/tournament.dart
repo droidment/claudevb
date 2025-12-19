@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'league_config.dart';
 
 class Tournament {
@@ -21,6 +22,10 @@ class Tournament {
   final DateTime createdAt;
   final DateTime updatedAt;
   final LeagueConfig? leagueConfig; // For pool_play_to_leagues format
+  final bool isPublic; // If true, public. If false, private (invite only)
+  final String? inviteCode; // Unique code for private tournaments
+  final double? latitude; // Geo-location latitude
+  final double? longitude; // Geo-location longitude
 
   Tournament({
     required this.id,
@@ -42,6 +47,10 @@ class Tournament {
     required this.createdAt,
     required this.updatedAt,
     this.leagueConfig,
+    this.isPublic = true,
+    this.inviteCode,
+    this.latitude,
+    this.longitude,
   });
 
   factory Tournament.fromJson(Map<String, dynamic> json) {
@@ -81,6 +90,14 @@ class Tournament {
                   : json['league_config'] as Map<String, dynamic>,
             )
           : null,
+      isPublic: json['is_public'] as bool? ?? true,
+      inviteCode: json['invite_code'] as String?,
+      latitude: json['latitude'] != null
+          ? double.parse(json['latitude'].toString())
+          : null,
+      longitude: json['longitude'] != null
+          ? double.parse(json['longitude'].toString())
+          : null,
     );
   }
 
@@ -105,6 +122,10 @@ class Tournament {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'league_config': leagueConfig?.toJson(),
+      'is_public': isPublic,
+      'invite_code': inviteCode,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
@@ -128,8 +149,44 @@ class Tournament {
       'league_config': leagueConfig != null
           ? jsonEncode(leagueConfig!.toJson())
           : null,
+      'is_public': isPublic,
+      'invite_code': inviteCode,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
+
+  /// Calculate distance from this tournament to given coordinates (in kilometers)
+  double? distanceFrom(double? userLat, double? userLon) {
+    if (latitude == null || longitude == null || userLat == null || userLon == null) {
+      return null;
+    }
+    return _calculateDistance(userLat, userLon, latitude!, longitude!);
+  }
+
+  /// Haversine formula to calculate distance between two points on Earth
+  static double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    const R = 6371; // Earth's radius in kilometers
+    final dLat = _toRadians(lat2 - lat1);
+    final dLon = _toRadians(lon2 - lon1);
+
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_toRadians(lat1)) *
+            math.cos(_toRadians(lat2)) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+
+    return R * c;
+  }
+
+  static double _toRadians(double degrees) => degrees * math.pi / 180;
 }
 
 enum TournamentFormat {

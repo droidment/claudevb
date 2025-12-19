@@ -17,6 +17,9 @@ class TournamentService {
     int minTeamSize = 6,
     int maxTeamSize = 12,
     double? entryFee,
+    bool isPublic = true,
+    double? latitude,
+    double? longitude,
   }) async {
     final user = supabase.auth.currentUser;
     if (user == null) {
@@ -39,6 +42,9 @@ class TournamentService {
       'entry_fee': entryFee,
       'status': TournamentStatus.registrationOpen.dbValue,
       'organizer_id': user.id,
+      'is_public': isPublic,
+      'latitude': latitude,
+      'longitude': longitude,
     };
 
     final response = await supabase
@@ -66,12 +72,18 @@ class TournamentService {
     return (response as List).map((json) => Tournament.fromJson(json)).toList();
   }
 
-  /// Get all tournaments (for browsing)
+  /// Get all public tournaments (for browsing)
   Future<List<Tournament>> getAllTournaments({
     TournamentStatus? status,
     String? sportType,
+    bool publicOnly = true,
   }) async {
     var query = supabase.from('tournaments').select();
+
+    // Only show public tournaments by default
+    if (publicOnly) {
+      query = query.eq('is_public', true);
+    }
 
     if (status != null) {
       query = query.eq('status', status.dbValue);
@@ -83,6 +95,21 @@ class TournamentService {
     final response = await query.order('start_date', ascending: true);
 
     return (response as List).map((json) => Tournament.fromJson(json)).toList();
+  }
+
+  /// Get tournament by invite code (for private tournaments)
+  Future<Tournament?> getTournamentByInviteCode(String inviteCode) async {
+    try {
+      final response = await supabase
+          .from('tournaments')
+          .select()
+          .eq('invite_code', inviteCode)
+          .single();
+
+      return Tournament.fromJson(response);
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Get a single tournament by ID

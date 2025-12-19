@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/tournament.dart';
 import '../../services/tournament_service.dart';
 
@@ -325,6 +326,110 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
             ),
           ),
           const SizedBox(height: 16),
+
+          // Privacy & Invite Code Card (for organizers of private tournaments)
+          if (widget.isOrganizer && !_tournament!.isPublic && _tournament!.inviteCode != null)
+            Card(
+              color: Colors.orange.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.lock, color: Colors.orange),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Private Tournament',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange.shade900,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Share this invite code with teams:',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange.shade300, width: 2),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _tournament!.inviteCode!,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.copy),
+                            onPressed: () {
+                              Clipboard.setData(
+                                ClipboardData(text: _tournament!.inviteCode!),
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Invite code copied to clipboard!'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            },
+                            tooltip: 'Copy invite code',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (widget.isOrganizer && !_tournament!.isPublic && _tournament!.inviteCode != null)
+            const SizedBox(height: 16),
+
+          // Privacy Status Card (for all users)
+          if (!_tournament!.isPublic)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.lock, color: Colors.orange.shade700),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Private Tournament',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'This tournament is invite-only',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (!_tournament!.isPublic)
+            const SizedBox(height: 16),
 
           // Details Card
           Card(

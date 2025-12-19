@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import '../../models/tournament.dart';
 import '../../services/tournament_service.dart';
 
@@ -28,6 +30,10 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
   DateTime? _endDate;
   DateTime? _registrationDeadline;
   bool _isLoading = false;
+  bool _isPublic = true;
+  double? _latitude;
+  double? _longitude;
+  bool _isGettingLocation = false;
 
   @override
   void dispose() {
@@ -89,6 +95,100 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
     return '${dateTime.month}/${dateTime.day}/${dateTime.year} at ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
+  Future<void> _getCurrentLocation() async {
+    setState(() => _isGettingLocation = true);
+
+    try {
+      // Check location permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw Exception('Location permission denied');
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('Location permission permanently denied');
+      }
+
+      // Get current position
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      setState(() {
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location set successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error getting location: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isGettingLocation = false);
+    }
+  }
+
+  Future<void> _geocodeAddress() async {
+    final address = _locationController.text.trim();
+    if (address.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a location first'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isGettingLocation = true);
+
+    try {
+      final locations = await locationFromAddress(address);
+      if (locations.isNotEmpty) {
+        setState(() {
+          _latitude = locations.first.latitude;
+          _longitude = locations.first.longitude;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location coordinates set from address!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not find coordinates for this address'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isGettingLocation = false);
+    }
+  }
+
   Future<void> _createTournament() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -119,6 +219,9 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
         entryFee: _entryFeeController.text.isEmpty
             ? null
             : double.tryParse(_entryFeeController.text),
+        isPublic: _isPublic,
+        latitude: _latitude,
+        longitude: _longitude,
       );
 
       if (mounted) {
@@ -354,6 +457,135 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 24),
+
+            // Privacy Section
+            _buildSectionHeader('Privacy Settings'),
+            const SizedBox(height: 8),
+            Card(
+              child: SwitchListTile(
+                title: const Text('Public Tournament'),
+                subtitle: Text(
+                  _isPublic
+                      ? 'Anyone can find and join this tournament'
+                      : 'Private - accessible only via invite link',
+                ),
+                value: _isPublic,
+                onChanged: (value) {
+                  setState(() => _isPublic = value);
+                },
+                secondary: Icon(
+                  _isPublic ? Icons.public : Icons.lock,
+                  color: _isPublic ? Colors.green : Colors.orange,
+                ),
+              ),
+            ),
+            if (!_isPublic) ...[
+              const SizedBox(height: 8),
+              Card(
+                color: Colors.orange.shade50,
+                child: const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.orange),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'An invite code will be automatically generated after creation. You can share it with teams to join.',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
+
+            // Location Geo-Coordinates Section
+            _buildSectionHeader('Location Coordinates (Optional)'),
+            const SizedBox(height: 8),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.my_location, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Set coordinates to enable nearby tournament search',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _isGettingLocation ? null : _getCurrentLocation,
+                            icon: _isGettingLocation
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.gps_fixed),
+                            label: const Text('Use Current Location'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _isGettingLocation ? null : _geocodeAddress,
+                            icon: const Icon(Icons.search),
+                            label: const Text('From Address'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_latitude != null && _longitude != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Coordinates: ${_latitude!.toStringAsFixed(6)}, ${_longitude!.toStringAsFixed(6)}',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close, size: 20),
+                              onPressed: () {
+                                setState(() {
+                                  _latitude = null;
+                                  _longitude = null;
+                                });
+                              },
+                              tooltip: 'Clear coordinates',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 24),
 

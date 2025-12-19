@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../models/tournament.dart';
 import '../../services/tournament_service.dart';
 import 'tournament_detail_screen.dart';
@@ -17,6 +18,10 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
   String? _error;
   String _selectedSport = 'all';
   TournamentStatus? _selectedStatus;
+  double? _userLatitude;
+  double? _userLongitude;
+  bool _showNearbyOnly = false;
+  double _maxDistance = 50.0; // km
 
   @override
   void initState() {
@@ -56,6 +61,78 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _getUserLocation() async {
+    try {
+      // Check location permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Location permission denied'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location permission permanently denied'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Get current position
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      );
+
+      setState(() {
+        _userLatitude = position.latitude;
+        _userLongitude = position.longitude;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location enabled! You can now filter by distance.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error getting location: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  List<Tournament> _filterTournaments() {
+    if (!_showNearbyOnly || _userLatitude == null || _userLongitude == null) {
+      return _tournaments;
+    }
+
+    return _tournaments.where((tournament) {
+      final distance = tournament.distanceFrom(_userLatitude, _userLongitude);
+      return distance != null && distance <= _maxDistance;
+    }).toList();
   }
 
   void _showFilterDialog() {
@@ -112,13 +189,74 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              Text(
+                'Distance',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                title: const Text('Show nearby tournaments only'),
+                subtitle: Text(
+                  _userLatitude != null
+                      ? 'Within ${_maxDistance.round()} km'
+                      : 'Enable location to use this filter',
+                ),
+                value: _showNearbyOnly,
+                onChanged: _userLatitude != null
+                    ? (value) {
+                        setState(() => _showNearbyOnly = value);
+                      }
+                    : null,
+              ),
+              if (_showNearbyOnly) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Max distance: ${_maxDistance.round()} km',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      Slider(
+                        value: _maxDistance,
+                        min: 5,
+                        max: 200,
+                        divisions: 39,
+                        label: '${_maxDistance.round()} km',
+                        onChanged: (value) {
+                          setState(() => _maxDistance = value);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (_userLatitude == null) ...[
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _getUserLocation();
+                    },
+                    icon: const Icon(Icons.my_location),
+                    label: const Text('Enable Location'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 40),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    _loadTournaments();
+                    setState(() {}); // Trigger rebuild with filters
                   },
                   child: const Text('Apply Filters'),
                 ),
@@ -218,6 +356,44 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
       );
     }
 
+    final filteredTournaments = _filterTournaments();
+
+    if (filteredTournaments.isEmpty && _tournaments.isNotEmpty && _showNearbyOnly) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.location_off,
+              size: 100,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No Nearby Tournaments',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try increasing the distance filter',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _showNearbyOnly = false;
+                });
+              },
+              child: const Text('Show All Tournaments'),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (_tournaments.isEmpty) {
       return Center(
         child: Column(
@@ -298,10 +474,11 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: _tournaments.length,
+              itemCount: filteredTournaments.length,
               itemBuilder: (context, index) {
-                final tournament = _tournaments[index];
-                return _buildTournamentCard(tournament);
+                final tournament = filteredTournaments[index];
+                final distance = tournament.distanceFrom(_userLatitude, _userLongitude);
+                return _buildTournamentCard(tournament, distance);
               },
             ),
           ),
@@ -310,7 +487,7 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
     );
   }
 
-  Widget _buildTournamentCard(Tournament tournament) {
+  Widget _buildTournamentCard(Tournament tournament, double? distance) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
@@ -372,6 +549,18 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
               const SizedBox(height: 8),
               Row(
                 children: [
+                  if (distance != null) ...[
+                    Icon(Icons.near_me, size: 16, color: Colors.blue[700]),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${distance.toStringAsFixed(1)} km away',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.blue[700],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                  ],
                   if (tournament.location != null) ...[
                     Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
                     const SizedBox(width: 4),
