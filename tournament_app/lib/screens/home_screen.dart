@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../models/user_profile.dart';
 import 'tournaments/organize_screen.dart';
+import 'tournaments/tournaments_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -177,28 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTournamentsContent() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.emoji_events, size: 80, color: Colors.blue),
-          const SizedBox(height: 16),
-          const Text('Tournaments'),
-          const SizedBox(height: 8),
-          const Text('Browse and register for tournaments'),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Tournament list coming soon!')),
-              );
-            },
-            icon: const Icon(Icons.search),
-            label: const Text('Browse Tournaments'),
-          ),
-        ],
-      ),
-    );
+    return const TournamentsListScreen();
   }
 
   Widget _buildMyTeamsContent() {

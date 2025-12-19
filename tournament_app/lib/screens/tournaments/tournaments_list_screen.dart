@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import '../../models/tournament.dart';
 import '../../services/tournament_service.dart';
-import 'create_tournament_screen.dart';
 import 'tournament_detail_screen.dart';
 
-class OrganizeScreen extends StatefulWidget {
-  const OrganizeScreen({super.key});
+class TournamentsListScreen extends StatefulWidget {
+  const TournamentsListScreen({super.key});
 
   @override
-  State<OrganizeScreen> createState() => _OrganizeScreenState();
+  State<TournamentsListScreen> createState() => _TournamentsListScreenState();
 }
 
-class _OrganizeScreenState extends State<OrganizeScreen> {
+class _TournamentsListScreenState extends State<TournamentsListScreen> {
   final _tournamentService = TournamentService();
   List<Tournament> _tournaments = [];
   bool _isLoading = true;
   String? _error;
+  String _selectedSport = 'all';
+  TournamentStatus? _selectedStatus;
 
   @override
   void initState() {
@@ -30,7 +31,10 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
     });
 
     try {
-      final tournaments = await _tournamentService.getMyTournaments();
+      final tournaments = await _tournamentService.getAllTournaments(
+        sportType: _selectedSport == 'all' ? null : _selectedSport,
+        status: _selectedStatus,
+      );
       setState(() {
         _tournaments = tournaments;
         _isLoading = false;
@@ -43,14 +47,113 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
     }
   }
 
-  Future<void> _navigateToCreateTournament() async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (context) => const CreateTournamentScreen()),
+  void _navigateToTournamentDetail(String tournamentId) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TournamentDetailScreen(
+          tournamentId: tournamentId,
+          isOrganizer: false,
+        ),
+      ),
     );
+  }
 
-    if (result == true) {
-      _loadTournaments();
-    }
+  void _showFilterDialog() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Filter Tournaments',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Sport Type',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  _buildFilterChip('All', 'all'),
+                  _buildFilterChip('Volleyball', 'volleyball'),
+                  _buildFilterChip('Pickleball', 'pickleball'),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Status',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  _buildStatusFilterChip('All', null),
+                  _buildStatusFilterChip(
+                    'Open',
+                    TournamentStatus.registrationOpen,
+                  ),
+                  _buildStatusFilterChip(
+                    'Ongoing',
+                    TournamentStatus.ongoing,
+                  ),
+                  _buildStatusFilterChip(
+                    'Completed',
+                    TournamentStatus.completed,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _loadTournaments();
+                  },
+                  child: const Text('Apply Filters'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, String value) {
+    final isSelected = _selectedSport == value;
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() {
+          _selectedSport = value;
+        });
+      },
+    );
+  }
+
+  Widget _buildStatusFilterChip(String label, TournamentStatus? value) {
+    final isSelected = _selectedStatus == value;
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() {
+          _selectedStatus = value;
+        });
+      },
+    );
   }
 
   Color _getStatusColor(TournamentStatus status) {
@@ -77,12 +180,18 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _buildBody(),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _navigateToCreateTournament,
-        icon: const Icon(Icons.add),
-        label: const Text('Create Tournament'),
+      appBar: AppBar(
+        title: const Text('Browse Tournaments'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: _showFilterDialog,
+            tooltip: 'Filter',
+          ),
+        ],
       ),
+      body: _buildBody(),
     );
   }
 
@@ -121,22 +230,30 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'No Tournaments Yet',
+              'No Tournaments Found',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'Create your first tournament to get started!',
+              'Check back later for upcoming tournaments',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
             ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _navigateToCreateTournament,
-              icon: const Icon(Icons.add),
-              label: const Text('Create Tournament'),
-            ),
+            if (_selectedSport != 'all' || _selectedStatus != null) ...[
+              const SizedBox(height: 24),
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _selectedSport = 'all';
+                    _selectedStatus = null;
+                  });
+                  _loadTournaments();
+                },
+                icon: const Icon(Icons.clear),
+                label: const Text('Clear Filters'),
+              ),
+            ],
           ],
         ),
       );
@@ -144,30 +261,53 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadTournaments,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _tournaments.length,
-        itemBuilder: (context, index) {
-          final tournament = _tournaments[index];
-          return _buildTournamentCard(tournament);
-        },
+      child: Column(
+        children: [
+          // Active filters display
+          if (_selectedSport != 'all' || _selectedStatus != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  const Text('Filters: '),
+                  if (_selectedSport != 'all')
+                    Chip(
+                      label: Text(_selectedSport.toUpperCase()),
+                      onDeleted: () {
+                        setState(() => _selectedSport = 'all');
+                        _loadTournaments();
+                      },
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                    ),
+                  if (_selectedStatus != null)
+                    Chip(
+                      label: Text(_selectedStatus!.displayName),
+                      onDeleted: () {
+                        setState(() => _selectedStatus = null);
+                        _loadTournaments();
+                      },
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                    ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _tournaments.length,
+              itemBuilder: (context, index) {
+                final tournament = _tournaments[index];
+                return _buildTournamentCard(tournament);
+              },
+            ),
+          ),
+        ],
       ),
     );
-  }
-
-  Future<void> _navigateToTournamentDetail(String tournamentId) async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (context) => TournamentDetailScreen(
-          tournamentId: tournamentId,
-          isOrganizer: true,
-        ),
-      ),
-    );
-
-    if (result == true) {
-      _loadTournaments();
-    }
   }
 
   Widget _buildTournamentCard(Tournament tournament) {
@@ -284,6 +424,27 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
                       ),
                     ],
                   ],
+                ),
+              ],
+              // Registration button for open tournaments
+              if (tournament.status == TournamentStatus.registrationOpen) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Team registration coming soon!'),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.how_to_reg),
+                    label: const Text('Register Team'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.green,
+                    ),
+                  ),
                 ),
               ],
             ],
