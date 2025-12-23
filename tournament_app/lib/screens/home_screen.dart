@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../models/user_profile.dart';
 import 'tournaments/organize_screen.dart';
+import 'tournaments/tournaments_list_screen.dart';
+import 'tournaments/join_by_invite_screen.dart';
+import 'teams/teams_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -138,6 +141,27 @@ class _HomeScreenState extends State<HomeScreen> {
             ).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 48),
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 24),
+            color: Colors.orange.shade50,
+            child: ListTile(
+              leading: Icon(Icons.vpn_key, color: Colors.orange.shade700),
+              title: const Text(
+                'Join Private Tournament',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: const Text('Have an invite code? Join here'),
+              trailing: const Icon(Icons.arrow_forward),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const JoinByInviteScreen(),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
           if (_userProfile?.isCaptain == true) ...[
             Card(
               margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -177,53 +201,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTournamentsContent() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.emoji_events, size: 80, color: Colors.blue),
-          const SizedBox(height: 16),
-          const Text('Tournaments'),
-          const SizedBox(height: 8),
-          const Text('Browse and register for tournaments'),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Tournament list coming soon!')),
-              );
-            },
-            icon: const Icon(Icons.search),
-            label: const Text('Browse Tournaments'),
-          ),
-        ],
-      ),
-    );
+    return const TournamentsListScreen();
   }
 
   Widget _buildMyTeamsContent() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.groups, size: 80, color: Colors.blue),
-          const SizedBox(height: 16),
-          const Text('My Teams'),
-          const SizedBox(height: 8),
-          const Text('Manage your teams and rosters'),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Team management coming soon!')),
-              );
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Create Team'),
-          ),
-        ],
-      ),
-    );
+    return const TeamsListScreen();
   }
 
   Widget _buildOrganizeContent() {

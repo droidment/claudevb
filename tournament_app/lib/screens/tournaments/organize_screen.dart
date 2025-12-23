@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/tournament.dart';
 import '../../services/tournament_service.dart';
 import 'create_tournament_screen.dart';
+import 'tournament_detail_screen.dart';
 
 class OrganizeScreen extends StatefulWidget {
   const OrganizeScreen({super.key});
@@ -154,16 +155,26 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
     );
   }
 
+  Future<void> _navigateToTournamentDetail(String tournamentId) async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => TournamentDetailScreen(
+          tournamentId: tournamentId,
+          isOrganizer: true,
+        ),
+      ),
+    );
+
+    if (result == true) {
+      _loadTournaments();
+    }
+  }
+
   Widget _buildTournamentCard(Tournament tournament) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
-        onTap: () {
-          // TODO: Navigate to tournament detail/management screen
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Tournament management coming soon!')),
-          );
-        },
+        onTap: () => _navigateToTournamentDetail(tournament.id),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
