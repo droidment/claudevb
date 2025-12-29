@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/tournament.dart';
 import '../../services/tournament_service.dart';
+import 'edit_tournament_screen.dart';
 
 class TournamentDetailScreen extends StatefulWidget {
   final String tournamentId;
@@ -70,6 +71,20 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _editTournament() async {
+    if (_tournament == null) return;
+
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => EditTournamentScreen(tournament: _tournament!),
+      ),
+    );
+
+    if (result == true) {
+      await _loadTournament();
     }
   }
 
@@ -194,6 +209,11 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: widget.isOrganizer
             ? [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: _editTournament,
+                  tooltip: 'Edit Tournament',
+                ),
                 IconButton(
                   icon: const Icon(Icons.delete),
                   onPressed: _deleteTournament,
