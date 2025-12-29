@@ -1,0 +1,20 @@
+name: Create Pull Request
+
+on:
+  push:
+    branches:
+      - claude/review-project-progress-pi0IU
+
+jobs:
+  create_pull_request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Auto-generated pull request"
+          title: "Merge claude/review-project-progress-pi0IU into master"
+          body: "This is an auto-generated pull request."
+          branch: claude/review-project-progress-pi0IU
+          base: master

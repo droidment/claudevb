@@ -294,7 +294,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
             _buildSectionHeader('Sport & Format'),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _sportType,
+              initialValue: _sportType,
               decoration: const InputDecoration(
                 labelText: 'Sport Type',
                 border: OutlineInputBorder(),
@@ -316,7 +316,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<TournamentFormat>(
-              value: _format,
+              initialValue: _format,
               decoration: const InputDecoration(
                 labelText: 'Tournament Format',
                 border: OutlineInputBorder(),

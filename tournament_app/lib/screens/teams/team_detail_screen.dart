@@ -519,7 +519,7 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<VolleyballPosition>(
-                value: _selectedPosition,
+                initialValue: _selectedPosition,
                 decoration: const InputDecoration(
                   labelText: 'Position',
                   border: OutlineInputBorder(),
@@ -725,7 +725,7 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<VolleyballPosition>(
-                value: _selectedPosition,
+                initialValue: _selectedPosition,
                 decoration: const InputDecoration(
                   labelText: 'Position',
                   border: OutlineInputBorder(),
