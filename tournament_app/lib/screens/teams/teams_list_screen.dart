@@ -232,9 +232,8 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
                         Expanded(
                           child: Text(
                             team.name,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),
                         if (team.registrationPaid)
