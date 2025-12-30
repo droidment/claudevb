@@ -171,6 +171,13 @@ class TeamService {
     required String captainName,
     String? captainEmail,
     String? captainPhone,
+    String? contactPerson2,
+    String? contactPhone2,
+    int? playerCount,
+    String? specialRequests,
+    String? signedBy,
+    DateTime? registrationDate,
+    String? category,
     String? homeCity,
     String? teamColor,
     bool registrationPaid = false,
@@ -194,11 +201,17 @@ class TeamService {
           ? DateTime.now().toIso8601String()
           : null,
       'lunch_count': lunchCount,
+      'captain_name': captainName,
       'captain_email': captainEmail,
       'captain_phone': captainPhone,
-      'notes': notes != null
-          ? 'Captain: $captainName${notes.isNotEmpty ? '\n$notes' : ''}'
-          : 'Captain: $captainName',
+      'contact_person_2': contactPerson2,
+      'contact_phone_2': contactPhone2,
+      'player_count': playerCount,
+      'special_requests': specialRequests,
+      'signed_by': signedBy,
+      'registration_date': registrationDate?.toIso8601String(),
+      'category': category,
+      'notes': notes,
     };
 
     final response = await supabase
@@ -223,11 +236,16 @@ class TeamService {
           captainName: csvTeam.captainName,
           captainEmail: csvTeam.captainEmail,
           captainPhone: csvTeam.captainPhone,
+          contactPerson2: csvTeam.contactPerson2,
+          playerCount: csvTeam.playerCount,
+          specialRequests: csvTeam.specialRequests,
+          registrationDate: csvTeam.registrationDate,
+          category: csvTeam.category,
           registrationPaid: csvTeam.paid,
           paymentAmount: csvTeam.paid
               ? 200.0
               : null, // Default registration fee
-          notes: csvTeam.specialRequests,
+          lunchCount: csvTeam.lunchCount,
         );
         importedTeams.add(team);
       } catch (e) {

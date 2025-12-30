@@ -9,8 +9,16 @@ class Team {
   final double? paymentAmount;
   final DateTime? paymentDate;
   final int lunchCount;
+  final String? captainName;
   final String? captainEmail;
   final String? captainPhone;
+  final String? contactPerson2;
+  final String? contactPhone2;
+  final int? playerCount;
+  final String? specialRequests;
+  final String? signedBy;
+  final DateTime? registrationDate;
+  final String? category;
   final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -26,8 +34,16 @@ class Team {
     this.paymentAmount,
     this.paymentDate,
     this.lunchCount = 0,
+    this.captainName,
     this.captainEmail,
     this.captainPhone,
+    this.contactPerson2,
+    this.contactPhone2,
+    this.playerCount,
+    this.specialRequests,
+    this.signedBy,
+    this.registrationDate,
+    this.category,
     this.notes,
     required this.createdAt,
     required this.updatedAt,
@@ -47,8 +63,18 @@ class Team {
           ? DateTime.parse(json['payment_date'] as String)
           : null,
       lunchCount: json['lunch_count'] as int? ?? 0,
+      captainName: json['captain_name'] as String?,
       captainEmail: json['captain_email'] as String?,
       captainPhone: json['captain_phone'] as String?,
+      contactPerson2: json['contact_person_2'] as String?,
+      contactPhone2: json['contact_phone_2'] as String?,
+      playerCount: json['player_count'] as int?,
+      specialRequests: json['special_requests'] as String?,
+      signedBy: json['signed_by'] as String?,
+      registrationDate: json['registration_date'] != null
+          ? DateTime.parse(json['registration_date'] as String)
+          : null,
+      category: json['category'] as String?,
       notes: json['notes'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
@@ -67,8 +93,16 @@ class Team {
       'payment_amount': paymentAmount,
       'payment_date': paymentDate?.toIso8601String(),
       'lunch_count': lunchCount,
+      'captain_name': captainName,
       'captain_email': captainEmail,
       'captain_phone': captainPhone,
+      'contact_person_2': contactPerson2,
+      'contact_phone_2': contactPhone2,
+      'player_count': playerCount,
+      'special_requests': specialRequests,
+      'signed_by': signedBy,
+      'registration_date': registrationDate?.toIso8601String(),
+      'category': category,
       'notes': notes,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -86,8 +120,16 @@ class Team {
       'payment_amount': paymentAmount,
       'payment_date': paymentDate?.toIso8601String(),
       'lunch_count': lunchCount,
+      'captain_name': captainName,
       'captain_email': captainEmail,
       'captain_phone': captainPhone,
+      'contact_person_2': contactPerson2,
+      'contact_phone_2': contactPhone2,
+      'player_count': playerCount,
+      'special_requests': specialRequests,
+      'signed_by': signedBy,
+      'registration_date': registrationDate?.toIso8601String(),
+      'category': category,
       'notes': notes,
     };
   }
@@ -103,8 +145,16 @@ class Team {
     double? paymentAmount,
     DateTime? paymentDate,
     int? lunchCount,
+    String? captainName,
     String? captainEmail,
     String? captainPhone,
+    String? contactPerson2,
+    String? contactPhone2,
+    int? playerCount,
+    String? specialRequests,
+    String? signedBy,
+    DateTime? registrationDate,
+    String? category,
     String? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -120,8 +170,16 @@ class Team {
       paymentAmount: paymentAmount ?? this.paymentAmount,
       paymentDate: paymentDate ?? this.paymentDate,
       lunchCount: lunchCount ?? this.lunchCount,
+      captainName: captainName ?? this.captainName,
       captainEmail: captainEmail ?? this.captainEmail,
       captainPhone: captainPhone ?? this.captainPhone,
+      contactPerson2: contactPerson2 ?? this.contactPerson2,
+      contactPhone2: contactPhone2 ?? this.contactPhone2,
+      playerCount: playerCount ?? this.playerCount,
+      specialRequests: specialRequests ?? this.specialRequests,
+      signedBy: signedBy ?? this.signedBy,
+      registrationDate: registrationDate ?? this.registrationDate,
+      category: category ?? this.category,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -141,6 +199,7 @@ class CsvTeamImport {
   final bool paid;
   final String? category;
   final DateTime? registrationDate;
+  int lunchCount;
   bool selected;
 
   CsvTeamImport({
@@ -154,6 +213,7 @@ class CsvTeamImport {
     this.paid = false,
     this.category,
     this.registrationDate,
+    this.lunchCount = 0,
     this.selected = true,
   });
 
