@@ -305,26 +305,59 @@ class TournamentService {
         .eq('team_id', teamId);
   }
 
-  /// Update a team's registration (pool assignment, seed, etc.)
+  /// Update a team's registration (pool assignment, seed, lunch, etc.)
   Future<TournamentRegistration> updateRegistration({
     required String tournamentId,
     required String teamId,
     String? poolAssignment,
+    bool updatePoolAssignment = false,
     int? seedNumber,
+    bool updateSeedNumber = false,
     PaymentStatus? paymentStatus,
     double? paymentAmount,
     RegistrationStatus? status,
     String? notes,
+    int? lunchNonvegCount,
+    int? lunchVegCount,
+    int? lunchNoNeedCount,
+    LunchPaymentStatus? lunchPaymentStatus,
   }) async {
     final updates = <String, dynamic>{};
 
-    if (poolAssignment != null) updates['pool_assignment'] = poolAssignment;
-    if (seedNumber != null) updates['seed_number'] = seedNumber;
-    if (paymentStatus != null)
+    // Use explicit flags to allow setting null values
+    if (updatePoolAssignment || poolAssignment != null) {
+      updates['pool_assignment'] = poolAssignment;
+    }
+    if (updateSeedNumber || seedNumber != null) {
+      updates['seed_number'] = seedNumber;
+    }
+    if (paymentStatus != null) {
       updates['payment_status'] = paymentStatus.dbValue;
+    }
     if (paymentAmount != null) updates['payment_amount'] = paymentAmount;
     if (status != null) updates['status'] = status.dbValue;
     if (notes != null) updates['notes'] = notes;
+    if (lunchNonvegCount != null) {
+      updates['lunch_nonveg_count'] = lunchNonvegCount;
+    }
+    if (lunchVegCount != null) updates['lunch_veg_count'] = lunchVegCount;
+    if (lunchNoNeedCount != null) {
+      updates['lunch_no_need_count'] = lunchNoNeedCount;
+    }
+    if (lunchPaymentStatus != null) {
+      updates['lunch_payment_status'] = lunchPaymentStatus.dbValue;
+    }
+
+    if (updates.isEmpty) {
+      // Nothing to update, just fetch current state
+      final response = await supabase
+          .from('tournament_registrations')
+          .select()
+          .eq('tournament_id', tournamentId)
+          .eq('team_id', teamId)
+          .single();
+      return TournamentRegistration.fromJson(response);
+    }
 
     final response = await supabase
         .from('tournament_registrations')

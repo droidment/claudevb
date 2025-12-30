@@ -69,7 +69,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
   }
 
   Future<void> _saveAllSeeds() async {
-    if (_seedChanges.isEmpty) {
+    if (_seedChanges.isEmpty && _poolChanges.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('No changes to save')));
@@ -82,11 +82,17 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
       // Save all seed and pool changes
       final allTeamIds = {..._seedChanges.keys, ..._poolChanges.keys};
       for (final teamId in allTeamIds) {
+        // Only pass values that have changed
+        final hasSeedChange = _seedChanges.containsKey(teamId);
+        final hasPoolChange = _poolChanges.containsKey(teamId);
+
         await _tournamentService.updateRegistration(
           tournamentId: widget.tournamentId,
           teamId: teamId,
-          seedNumber: _seedChanges[teamId],
-          poolAssignment: _poolChanges[teamId],
+          seedNumber: hasSeedChange ? _seedChanges[teamId] : null,
+          updateSeedNumber: hasSeedChange,
+          poolAssignment: hasPoolChange ? _poolChanges[teamId] : null,
+          updatePoolAssignment: hasPoolChange,
         );
       }
 
