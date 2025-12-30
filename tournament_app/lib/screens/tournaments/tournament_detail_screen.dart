@@ -249,7 +249,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                       value: 'delete',
                       child: ListTile(
                         leading: Icon(Icons.delete, color: Colors.red),
-                        title: Text('Delete', style: TextStyle(color: Colors.red)),
+                        title: Text(
+                          'Delete',
+                          style: TextStyle(color: Colors.red),
+                        ),
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
