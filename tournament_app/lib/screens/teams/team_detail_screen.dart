@@ -177,19 +177,20 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Widget _buildRegistrationInfoCard() {
-    final hasContactInfo =
+    // Check if we have any contact or registration info to display
+    final hasAnyInfo =
         _team!.captainName != null ||
         _team!.captainEmail != null ||
         _team!.captainPhone != null ||
-        _team!.contactPerson2 != null;
-
-    final hasRegistrationInfo =
+        _team!.contactPerson2 != null ||
         _team!.registrationDate != null ||
         _team!.specialRequests != null ||
         _team!.signedBy != null ||
-        _team!.notes != null;
+        _team!.notes != null ||
+        _team!.category != null ||
+        _team!.playerCount != null;
 
-    if (!hasContactInfo && !hasRegistrationInfo) {
+    if (!hasAnyInfo) {
       return const SizedBox.shrink();
     }
 
@@ -199,13 +200,22 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Registration Info',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Icon(
+                  Icons.assignment,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Registration Info',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
+            const Divider(height: 24),
 
             // Captain Information
             if (_team!.captainName != null)
@@ -214,6 +224,14 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
               _buildInfoRow(Icons.email, 'Email', _team!.captainEmail!),
             if (_team!.captainPhone != null)
               _buildInfoRow(Icons.phone, 'Phone', _team!.captainPhone!),
+            if (_team!.category != null)
+              _buildInfoRow(Icons.category, 'Category', _team!.category!),
+            if (_team!.playerCount != null)
+              _buildInfoRow(
+                Icons.group,
+                'Player Count',
+                '${_team!.playerCount} players',
+              ),
 
             // Contact Person 2
             if (_team!.contactPerson2 != null) ...[
@@ -232,86 +250,96 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
             ],
 
             // Registration Details
-            if (hasRegistrationInfo) ...[
+            if (_team!.registrationDate != null)
+              _buildInfoRow(
+                Icons.calendar_today,
+                'Registered',
+                _formatDate(_team!.registrationDate),
+              ),
+            if (_team!.signedBy != null)
+              _buildInfoRow(Icons.draw, 'Signed By', _team!.signedBy!),
+
+            // Special Requests
+            if (_team!.specialRequests != null &&
+                _team!.specialRequests!.isNotEmpty) ...[
               const Divider(height: 24),
-              if (_team!.registrationDate != null)
-                _buildInfoRow(
-                  Icons.calendar_today,
-                  'Registered',
-                  _formatDate(_team!.registrationDate),
-                ),
-              if (_team!.signedBy != null)
-                _buildInfoRow(Icons.draw, 'Signed By', _team!.signedBy!),
-              if (_team!.specialRequests != null &&
-                  _team!.specialRequests!.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.note, size: 20, color: Colors.grey[600]),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Special Requests',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.note, size: 20, color: Colors.orange[600]),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Special Requests',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
                           ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              _team!.specialRequests!,
-                              style: const TextStyle(fontSize: 14),
-                            ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.orange.shade200),
                           ),
-                        ],
-                      ),
+                          child: Text(
+                            _team!.specialRequests!,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ],
-              if (_team!.notes != null && _team!.notes!.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.sticky_note_2,
-                      size: 20,
-                      color: Colors.grey[600],
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Notes',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
+                  ),
+                ],
+              ),
+            ],
+
+            // Notes
+            if (_team!.notes != null && _team!.notes!.isNotEmpty) ...[
+              const Divider(height: 24),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.sticky_note_2, size: 20, color: Colors.blue[600]),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Notes',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue.shade200),
+                          ),
+                          child: Text(
                             _team!.notes!,
                             style: const TextStyle(fontSize: 14),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ],
           ],
         ),
