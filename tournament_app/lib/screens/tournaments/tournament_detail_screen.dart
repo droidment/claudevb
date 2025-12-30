@@ -3,8 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/tournament.dart';
 import '../../models/tournament_registration.dart';
-import '../../models/team.dart';
+import '../../models/scoring_format.dart';
 import '../../services/tournament_service.dart';
+import '../../services/match_service.dart';
+import '../../services/round_robin_generator.dart';
+import '../matches/matches_screen.dart';
+import '../matches/standings_screen.dart';
 import 'edit_tournament_screen.dart';
 import 'add_teams_screen.dart';
 import 'manage_seeds_screen.dart';
@@ -26,10 +30,13 @@ class TournamentDetailScreen extends StatefulWidget {
 
 class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
   final _tournamentService = TournamentService();
+  final _matchService = MatchService();
   Tournament? _tournament;
   List<Map<String, dynamic>> _registeredTeams = [];
   bool _isLoading = true;
   bool _isLoadingTeams = false;
+  bool _hasMatches = false;
+  int _matchCount = 0;
   String? _error;
 
   /// Check if current user is the organizer of this tournament
@@ -37,6 +44,15 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
     if (currentUserId == null || _tournament == null) return false;
     return _tournament!.organizerId == currentUserId || widget.isOrganizer;
+  }
+
+  /// Check if tournament format supports schedule generation
+  /// Round robin, pool play, and pool play to leagues all use round robin scheduling
+  bool get _supportsScheduleGeneration {
+    if (_tournament == null) return false;
+    return _tournament!.format == TournamentFormat.roundRobin ||
+        _tournament!.format == TournamentFormat.poolPlay ||
+        _tournament!.format == TournamentFormat.poolPlayToLeagues;
   }
 
   @override
@@ -78,8 +94,19 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
       final teams = await _tournamentService.getTournamentTeams(
         widget.tournamentId,
       );
+
+      // Check if matches exist
+      final hasMatches = await _matchService.hasTournamentMatches(
+        widget.tournamentId,
+      );
+      final matchCount = await _matchService.getMatchCount(
+        widget.tournamentId,
+      );
+
       setState(() {
         _registeredTeams = teams;
+        _hasMatches = hasMatches;
+        _matchCount = matchCount;
         _isLoadingTeams = false;
       });
     } catch (e) {
@@ -113,6 +140,225 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         );
       }
     }
+  }
+
+  /// Check if tournament is pool play format (requires pool assignments)
+  bool get _isPoolPlayFormat {
+    if (_tournament == null) return false;
+    return _tournament!.format == TournamentFormat.poolPlay ||
+        _tournament!.format == TournamentFormat.poolPlayToLeagues;
+  }
+
+  /// Group registered teams by pool assignment
+  Map<String, List<String>> get _teamsByPool {
+    final Map<String, List<String>> grouped = {};
+    for (final reg in _registeredTeams) {
+      final poolAssignment = reg['pool_assignment'] as String?;
+      final teamId = (reg['teams'] as Map<String, dynamic>)['id'] as String;
+
+      if (poolAssignment != null && poolAssignment.isNotEmpty) {
+        grouped.putIfAbsent(poolAssignment, () => []);
+        grouped[poolAssignment]!.add(teamId);
+      }
+    }
+    return grouped;
+  }
+
+  /// Get teams without pool assignment
+  List<String> get _teamsWithoutPool {
+    return _registeredTeams
+        .where((reg) {
+          final poolAssignment = reg['pool_assignment'] as String?;
+          return poolAssignment == null || poolAssignment.isEmpty;
+        })
+        .map((reg) => (reg['teams'] as Map<String, dynamic>)['id'] as String)
+        .toList();
+  }
+
+  Future<void> _generateSchedule() async {
+    if (_tournament == null || _registeredTeams.isEmpty) return;
+
+    if (_registeredTeams.length < 2) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('At least 2 teams are required to generate matches'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
+
+    // For pool play formats, check that teams have pool assignments
+    if (_isPoolPlayFormat) {
+      final teamsWithoutPool = _teamsWithoutPool;
+      if (teamsWithoutPool.isNotEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${teamsWithoutPool.length} team(s) have no pool assignment. '
+                'Please assign all teams to pools first.',
+              ),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
+
+      final teamsByPool = _teamsByPool;
+      // Check that each pool has at least 2 teams
+      for (final entry in teamsByPool.entries) {
+        if (entry.value.length < 2) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Pool ${entry.key} has only ${entry.value.length} team(s). '
+                  'Each pool needs at least 2 teams.',
+                ),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return;
+        }
+      }
+    }
+
+    // Show configuration dialog
+    final config = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => _GenerateScheduleDialog(
+        numberOfTeams: _registeredTeams.length,
+        tournamentFormat: _tournament!.format,
+        teamsByPool: _isPoolPlayFormat ? _teamsByPool : null,
+      ),
+    );
+
+    if (config == null) return; // User cancelled
+
+    try {
+      // Show loading indicator
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Generating matches...'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
+      List<Map<String, dynamic>> matchesData;
+
+      if (_isPoolPlayFormat) {
+        // Generate pool play matches (round robin within each pool)
+        matchesData = RoundRobinGenerator.generatePoolPlayMatches(
+          tournamentId: widget.tournamentId,
+          teamsByPool: _teamsByPool,
+          startTime: config['startTime'] as DateTime,
+          matchDurationMinutes: config['matchDuration'] as int,
+          numberOfCourts: config['numberOfCourts'] as int,
+          venue: _tournament!.location,
+        );
+      } else {
+        // Generate regular round robin matches (all teams play each other)
+        final teamIds = _registeredTeams
+            .map((reg) => (reg['teams'] as Map<String, dynamic>)['id'] as String)
+            .toList();
+
+        matchesData = RoundRobinGenerator.generateMatches(
+          tournamentId: widget.tournamentId,
+          teamIds: teamIds,
+          startTime: config['startTime'] as DateTime,
+          matchDurationMinutes: config['matchDuration'] as int,
+          numberOfCourts: config['numberOfCourts'] as int,
+          venue: _tournament!.location,
+        );
+      }
+
+      // Insert matches into database
+      await _matchService.createMatches(matchesData);
+
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      // Reload teams to update match count
+      await _loadRegisteredTeams();
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${matchesData.length} matches generated successfully!',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to matches screen
+        _navigateToMatches();
+      }
+    } catch (e) {
+      // Close loading dialog if open
+      if (mounted) Navigator.of(context).pop();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error generating schedule: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _navigateToMatches() async {
+    if (_tournament == null) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => MatchesScreen(
+          tournamentId: widget.tournamentId,
+          tournamentName: _tournament!.name,
+          isOrganizer: _isCurrentUserOrganizer,
+        ),
+      ),
+    );
+
+    // Refresh match count when returning
+    await _loadRegisteredTeams();
+  }
+
+  Future<void> _navigateToStandings() async {
+    if (_tournament == null) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => StandingsScreen(
+          tournamentId: widget.tournamentId,
+          tournamentName: _tournament!.name,
+        ),
+      ),
+    );
   }
 
   Future<void> _editTournament() async {
@@ -841,15 +1087,50 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // Manage Lunches button
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: _navigateToManageLunches,
-                      icon: const Icon(Icons.restaurant_menu),
-                      label: const Text('Manage Lunches'),
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _navigateToManageLunches,
+                          icon: const Icon(Icons.restaurant_menu),
+                          label: const Text('Manage Lunches'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (_hasMatches)
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: _navigateToMatches,
+                            icon: const Icon(Icons.calendar_month),
+                            label: Text('View Schedule ($_matchCount)'),
+                          ),
+                        )
+                      else if (_supportsScheduleGeneration)
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: _generateSchedule,
+                            icon: const Icon(Icons.auto_fix_high),
+                            label: const Text('Generate Schedule'),
+                          ),
+                        ),
+                    ],
                   ),
+                  // Standings button - show when matches exist
+                  if (_hasMatches && _isPoolPlayFormat) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _navigateToStandings,
+                        icon: const Icon(Icons.leaderboard),
+                        label: const Text('View Standings & Tier Progression'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.purple,
+                          side: const BorderSide(color: Colors.purple),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   ..._registeredTeams.map((reg) => _buildTeamTile(reg)),
                 ],
@@ -1149,7 +1430,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                           ),
                           Switch(
                             value: dialogPaymentStatus == PaymentStatus.paid,
-                            activeColor: Colors.green,
+                            activeThumbColor: Colors.green,
                             onChanged: (value) {
                               setDialogState(() {
                                 dialogPaymentStatus = value
@@ -1279,6 +1560,379 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Dialog for configuring schedule generation
+class _GenerateScheduleDialog extends StatefulWidget {
+  final int numberOfTeams;
+  final TournamentFormat tournamentFormat;
+  final Map<String, List<String>>? teamsByPool; // For pool play formats
+
+  const _GenerateScheduleDialog({
+    required this.numberOfTeams,
+    required this.tournamentFormat,
+    this.teamsByPool,
+  });
+
+  /// Check if this is pool play format
+  bool get isPoolPlay => teamsByPool != null && teamsByPool!.isNotEmpty;
+
+  @override
+  State<_GenerateScheduleDialog> createState() =>
+      _GenerateScheduleDialogState();
+}
+
+class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
+  DateTime _startTime = DateTime.now().add(const Duration(days: 1));
+  int _matchDuration = 60;
+  int _numberOfCourts = 2;
+  ScoringFormat _scoringFormat = ScoringFormat.singleSet;
+
+  /// Calculate total matches based on format
+  int get _totalMatches {
+    if (widget.isPoolPlay) {
+      // Pool play: sum of round robin matches within each pool
+      final teamsPerPool = widget.teamsByPool!.map(
+        (key, value) => MapEntry(key, value.length),
+      );
+      return RoundRobinGenerator.calculatePoolPlayTotalMatches(teamsPerPool);
+    } else {
+      // Regular round robin: all teams play each other
+      return RoundRobinGenerator.calculateTotalMatches(widget.numberOfTeams);
+    }
+  }
+
+  /// Estimate duration based on format
+  int get _estimatedDuration {
+    if (widget.isPoolPlay) {
+      final teamsPerPool = widget.teamsByPool!.map(
+        (key, value) => MapEntry(key, value.length),
+      );
+      return RoundRobinGenerator.estimatePoolPlayDuration(
+        teamsPerPool: teamsPerPool,
+        matchDurationMinutes: _matchDuration,
+        numberOfCourts: _numberOfCourts,
+      );
+    } else {
+      return RoundRobinGenerator.estimateTournamentDuration(
+        numberOfTeams: widget.numberOfTeams,
+        matchDurationMinutes: _matchDuration,
+        numberOfCourts: _numberOfCourts,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final totalMatches = _totalMatches;
+    final estimatedDuration = _estimatedDuration;
+
+    return AlertDialog(
+      title: Text(
+        widget.isPoolPlay
+            ? 'Generate Pool Play Schedule'
+            : 'Generate Tournament Schedule',
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Pool play info
+            if (widget.isPoolPlay) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.purple.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.purple.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.grid_view, color: Colors.purple.shade700),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Pool Play Format',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.purple.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Teams play round robin within their pool:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.purple.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    ...widget.teamsByPool!.entries.map((entry) {
+                      final poolMatches =
+                          RoundRobinGenerator.calculateTotalMatches(
+                        entry.value.length,
+                      );
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 8, top: 2),
+                        child: Text(
+                          '• Pool ${entry.key}: ${entry.value.length} teams → $poolMatches matches',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.purple.shade900,
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            Text(
+              'This will create $totalMatches matches for ${widget.numberOfTeams} teams.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 24),
+
+            // Start Date & Time
+            Card(
+              color: Colors.blue.shade50,
+              child: ListTile(
+                leading: const Icon(Icons.calendar_today),
+                title: const Text('Start Date & Time'),
+                subtitle: Text(
+                  '${_startTime.month}/${_startTime.day}/${_startTime.year} '
+                  'at ${_startTime.hour}:${_startTime.minute.toString().padLeft(2, '0')}',
+                ),
+                trailing: const Icon(Icons.edit),
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: _startTime,
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+
+                  if (date != null && mounted) {
+                    final time = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(_startTime),
+                    );
+
+                    if (time != null) {
+                      setState(() {
+                        _startTime = DateTime(
+                          date.year,
+                          date.month,
+                          date.day,
+                          time.hour,
+                          time.minute,
+                        );
+                      });
+                    }
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Match Duration
+            Text(
+              'Match Duration',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Slider(
+                    value: _matchDuration.toDouble(),
+                    min: 30,
+                    max: 120,
+                    divisions: 9,
+                    label: '$_matchDuration min',
+                    onChanged: (value) {
+                      setState(() => _matchDuration = value.toInt());
+                    },
+                  ),
+                ),
+                SizedBox(
+                  width: 80,
+                  child: Text(
+                    '$_matchDuration min',
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Number of Courts
+            Text(
+              'Number of Courts',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Slider(
+                    value: _numberOfCourts.toDouble(),
+                    min: 1,
+                    max: 8,
+                    divisions: 7,
+                    label: '$_numberOfCourts',
+                    onChanged: (value) {
+                      setState(() => _numberOfCourts = value.toInt());
+                    },
+                  ),
+                ),
+                SizedBox(
+                  width: 80,
+                  child: Text(
+                    '$_numberOfCourts courts',
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Scoring Format
+            Text(
+              'Scoring Format',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            ...ScoringFormat.values.map((format) {
+              final isSelected = _scoringFormat == format;
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                color: isSelected ? Colors.blue.shade50 : null,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(
+                    color: isSelected ? Colors.blue : Colors.grey.shade300,
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: InkWell(
+                  onTap: () => setState(() => _scoringFormat = format),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Radio<ScoringFormat>(
+                          value: format,
+                          groupValue: _scoringFormat,
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() => _scoringFormat = value);
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                format.displayName,
+                                style: TextStyle(
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                              Text(
+                                format.shortDescription,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 16),
+
+            // Estimated Duration
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.schedule, color: Colors.green.shade700),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Estimated Duration',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${(estimatedDuration / 60).toStringAsFixed(1)} hours',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.green.shade900,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancel'),
+        ),
+        FilledButton.icon(
+          onPressed: () {
+            Navigator.of(context).pop({
+              'startTime': _startTime,
+              'matchDuration': _matchDuration,
+              'numberOfCourts': _numberOfCourts,
+              'scoringFormat': _scoringFormat,
+            });
+          },
+          icon: const Icon(Icons.auto_fix_high),
+          label: const Text('Generate'),
+        ),
+      ],
     );
   }
 }
