@@ -8,6 +8,7 @@ import '../../services/tournament_service.dart';
 import 'edit_tournament_screen.dart';
 import 'add_teams_screen.dart';
 import 'manage_seeds_screen.dart';
+import 'manage_lunches_screen.dart';
 
 class TournamentDetailScreen extends StatefulWidget {
   final String tournamentId;
@@ -158,6 +159,22 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     );
 
     // Refresh teams after returning from manage seeds
+    await _loadRegisteredTeams();
+  }
+
+  Future<void> _navigateToManageLunches() async {
+    if (_tournament == null) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ManageLunchesScreen(
+          tournamentId: _tournament!.id,
+          tournamentName: _tournament!.name,
+        ),
+      ),
+    );
+
+    // Refresh teams after returning from manage lunches
     await _loadRegisteredTeams();
   }
 
@@ -823,6 +840,16 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
+                  // Manage Lunches button
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _navigateToManageLunches,
+                      icon: const Icon(Icons.restaurant_menu),
+                      label: const Text('Manage Lunches'),
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   ..._registeredTeams.map((reg) => _buildTeamTile(reg)),
                 ],
@@ -847,6 +874,16 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     final isPaid = paymentStatus == 'paid';
     final poolAssignment = registration['pool_assignment'] as String?;
     final seedNumber = registration['seed_number'] as int?;
+
+    // Lunch info
+    final lunchNonveg = registration['lunch_nonveg_count'] as int? ?? 0;
+    final lunchVeg = registration['lunch_veg_count'] as int? ?? 0;
+    final totalLunches = lunchNonveg + lunchVeg;
+    final lunchPaymentStatusStr =
+        registration['lunch_payment_status'] as String? ?? 'not_paid';
+    final lunchPaymentStatus = LunchPaymentStatusExtension.fromString(
+      lunchPaymentStatusStr,
+    );
 
     Color avatarColor = Colors.blue;
     if (teamColor != null) {
@@ -964,6 +1001,39 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                   fontSize: 11,
                   color: Colors.grey[600],
                   fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+            // Lunch info badge
+            if (totalLunches > 0) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: lunchPaymentStatus.color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: lunchPaymentStatus.color.withOpacity(0.5),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.restaurant,
+                      size: 10,
+                      color: lunchPaymentStatus.color,
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      '$totalLunches',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: lunchPaymentStatus.color,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

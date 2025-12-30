@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 class TournamentRegistration {
   final String id;
   final String tournamentId;
@@ -9,6 +11,10 @@ class TournamentRegistration {
   final String? poolAssignment;
   final int? seedNumber;
   final String? notes;
+  final int lunchNonvegCount;
+  final int lunchVegCount;
+  final int lunchNoNeedCount;
+  final LunchPaymentStatus lunchPaymentStatus;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -23,9 +29,19 @@ class TournamentRegistration {
     this.poolAssignment,
     this.seedNumber,
     this.notes,
+    this.lunchNonvegCount = 0,
+    this.lunchVegCount = 0,
+    this.lunchNoNeedCount = 0,
+    this.lunchPaymentStatus = LunchPaymentStatus.notPaid,
     required this.createdAt,
     required this.updatedAt,
   });
+
+  /// Total number of lunches ordered (non-veg + veg)
+  int get totalLunchesOrdered => lunchNonvegCount + lunchVegCount;
+
+  /// Total lunch cost at $10 per lunch
+  double get totalLunchCost => totalLunchesOrdered * 10.0;
 
   factory TournamentRegistration.fromJson(Map<String, dynamic> json) {
     return TournamentRegistration(
@@ -34,15 +50,23 @@ class TournamentRegistration {
       teamId: json['team_id'] as String,
       registrationDate: DateTime.parse(json['registration_date'] as String),
       paymentStatus: PaymentStatusExtension.fromString(
-          json['payment_status'] as String? ?? 'pending'),
+        json['payment_status'] as String? ?? 'pending',
+      ),
       paymentAmount: json['payment_amount'] != null
           ? double.parse(json['payment_amount'].toString())
           : null,
       status: RegistrationStatusExtension.fromString(
-          json['status'] as String? ?? 'pending'),
+        json['status'] as String? ?? 'pending',
+      ),
       poolAssignment: json['pool_assignment'] as String?,
       seedNumber: json['seed_number'] as int?,
       notes: json['notes'] as String?,
+      lunchNonvegCount: json['lunch_nonveg_count'] as int? ?? 0,
+      lunchVegCount: json['lunch_veg_count'] as int? ?? 0,
+      lunchNoNeedCount: json['lunch_no_need_count'] as int? ?? 0,
+      lunchPaymentStatus: LunchPaymentStatusExtension.fromString(
+        json['lunch_payment_status'] as String? ?? 'not_paid',
+      ),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -60,6 +84,10 @@ class TournamentRegistration {
       'pool_assignment': poolAssignment,
       'seed_number': seedNumber,
       'notes': notes,
+      'lunch_nonveg_count': lunchNonvegCount,
+      'lunch_veg_count': lunchVegCount,
+      'lunch_no_need_count': lunchNoNeedCount,
+      'lunch_payment_status': lunchPaymentStatus.dbValue,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -75,15 +103,15 @@ class TournamentRegistration {
       'pool_assignment': poolAssignment,
       'seed_number': seedNumber,
       'notes': notes,
+      'lunch_nonveg_count': lunchNonvegCount,
+      'lunch_veg_count': lunchVegCount,
+      'lunch_no_need_count': lunchNoNeedCount,
+      'lunch_payment_status': lunchPaymentStatus.dbValue,
     };
   }
 }
 
-enum PaymentStatus {
-  pending,
-  paid,
-  refunded,
-}
+enum PaymentStatus { pending, paid, refunded }
 
 extension PaymentStatusExtension on PaymentStatus {
   String get displayName {
@@ -122,12 +150,7 @@ extension PaymentStatusExtension on PaymentStatus {
   }
 }
 
-enum RegistrationStatus {
-  pending,
-  approved,
-  rejected,
-  withdrawn,
-}
+enum RegistrationStatus { pending, approved, rejected, withdrawn }
 
 extension RegistrationStatusExtension on RegistrationStatus {
   String get displayName {
@@ -168,6 +191,56 @@ extension RegistrationStatusExtension on RegistrationStatus {
         return RegistrationStatus.withdrawn;
       default:
         return RegistrationStatus.pending;
+    }
+  }
+}
+
+enum LunchPaymentStatus { notPaid, partiallyPaid, paid }
+
+extension LunchPaymentStatusExtension on LunchPaymentStatus {
+  String get displayName {
+    switch (this) {
+      case LunchPaymentStatus.notPaid:
+        return 'Not Paid';
+      case LunchPaymentStatus.partiallyPaid:
+        return 'Partially Paid';
+      case LunchPaymentStatus.paid:
+        return 'Paid';
+    }
+  }
+
+  String get dbValue {
+    switch (this) {
+      case LunchPaymentStatus.notPaid:
+        return 'not_paid';
+      case LunchPaymentStatus.partiallyPaid:
+        return 'partially_paid';
+      case LunchPaymentStatus.paid:
+        return 'paid';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case LunchPaymentStatus.notPaid:
+        return const Color(0xFFE53935); // Red
+      case LunchPaymentStatus.partiallyPaid:
+        return const Color(0xFFFFA000); // Orange
+      case LunchPaymentStatus.paid:
+        return const Color(0xFF43A047); // Green
+    }
+  }
+
+  static LunchPaymentStatus fromString(String value) {
+    switch (value) {
+      case 'not_paid':
+        return LunchPaymentStatus.notPaid;
+      case 'partially_paid':
+        return LunchPaymentStatus.partiallyPaid;
+      case 'paid':
+        return LunchPaymentStatus.paid;
+      default:
+        return LunchPaymentStatus.notPaid;
     }
   }
 }
