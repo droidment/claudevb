@@ -164,7 +164,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  initialValue: _selectedRole,
+                  value: _selectedRole,
                   decoration: const InputDecoration(
                     labelText: 'I am a...',
                     prefixIcon: Icon(Icons.badge),

@@ -41,7 +41,7 @@ class UserProfile {
     };
   }
 
-  bool get isCaptain => role == 'captain' || role == 'admin';
+  bool get isCaptain => role == 'captain' || role == 'organizer' || role == 'admin';
   bool get isOrganizer => role == 'organizer' || role == 'admin';
   bool get isAdmin => role == 'admin';
 }
