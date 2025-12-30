@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/tournament.dart';
 import '../../services/tournament_service.dart';
 import 'edit_tournament_screen.dart';
@@ -24,6 +25,13 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
   bool _isLoading = true;
   String? _error;
 
+  /// Check if current user is the organizer of this tournament
+  bool get _isCurrentUserOrganizer {
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    if (currentUserId == null || _tournament == null) return false;
+    return _tournament!.organizerId == currentUserId || widget.isOrganizer;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -37,7 +45,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     });
 
     try {
-      final tournament = await _tournamentService.getTournament(widget.tournamentId);
+      final tournament = await _tournamentService.getTournament(
+        widget.tournamentId,
+      );
       setState(() {
         _tournament = tournament;
         _isLoading = false;
@@ -52,7 +62,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
 
   Future<void> _updateStatus(TournamentStatus newStatus) async {
     try {
-      await _tournamentService.updateTournamentStatus(widget.tournamentId, newStatus);
+      await _tournamentService.updateTournamentStatus(
+        widget.tournamentId,
+        newStatus,
+      );
       await _loadTournament();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -207,17 +220,40 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
       appBar: AppBar(
         title: const Text('Tournament Details'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: widget.isOrganizer
+        actions: _isCurrentUserOrganizer
             ? [
                 IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: _editTournament,
                   tooltip: 'Edit Tournament',
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: _deleteTournament,
-                  tooltip: 'Delete Tournament',
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert),
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      _deleteTournament();
+                    } else if (value == 'status') {
+                      _showStatusMenu();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'status',
+                      child: ListTile(
+                        leading: Icon(Icons.sync),
+                        title: Text('Change Status'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: ListTile(
+                        leading: Icon(Icons.delete, color: Colors.red),
+                        title: Text('Delete', style: TextStyle(color: Colors.red)),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
                 ),
               ]
             : null,
@@ -275,16 +311,14 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                           children: [
                             Text(
                               _tournament!.name,
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               _tournament!.format.displayName,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: Colors.grey[600]),
                             ),
                           ],
                         ),
@@ -296,9 +330,14 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                     onTap: widget.isOrganizer ? _showStatusMenu : null,
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
-                        color: _getStatusColor(_tournament!.status).withOpacity(0.1),
+                        color: _getStatusColor(
+                          _tournament!.status,
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: _getStatusColor(_tournament!.status),
@@ -348,7 +387,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           const SizedBox(height: 16),
 
           // Privacy & Invite Code Card (for organizers of private tournaments)
-          if (widget.isOrganizer && !_tournament!.isPublic && _tournament!.inviteCode != null)
+          if (widget.isOrganizer &&
+              !_tournament!.isPublic &&
+              _tournament!.inviteCode != null)
             Card(
               color: Colors.orange.shade50,
               child: Padding(
@@ -362,10 +403,11 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                         const SizedBox(width: 8),
                         Text(
                           'Private Tournament',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange.shade900,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange.shade900,
+                              ),
                         ),
                       ],
                     ),
@@ -380,7 +422,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange.shade300, width: 2),
+                        border: Border.all(
+                          color: Colors.orange.shade300,
+                          width: 2,
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -402,7 +447,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                               );
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Invite code copied to clipboard!'),
+                                  content: Text(
+                                    'Invite code copied to clipboard!',
+                                  ),
                                   backgroundColor: Colors.green,
                                 ),
                               );
@@ -416,7 +463,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                 ),
               ),
             ),
-          if (widget.isOrganizer && !_tournament!.isPublic && _tournament!.inviteCode != null)
+          if (widget.isOrganizer &&
+              !_tournament!.isPublic &&
+              _tournament!.inviteCode != null)
             const SizedBox(height: 16),
 
           // Privacy Status Card (for all users)
@@ -448,8 +497,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                 ),
               ),
             ),
-          if (!_tournament!.isPublic)
-            const SizedBox(height: 16),
+          if (!_tournament!.isPublic) const SizedBox(height: 16),
 
           // Details Card
           Card(
@@ -465,12 +513,28 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  _buildDetailRow(Icons.sports, 'Sport', _tournament!.sportType.toUpperCase()),
-                  _buildDetailRow(Icons.format_list_numbered, 'Format', _tournament!.format.displayName),
+                  _buildDetailRow(
+                    Icons.sports,
+                    'Sport',
+                    _tournament!.sportType.toUpperCase(),
+                  ),
+                  _buildDetailRow(
+                    Icons.format_list_numbered,
+                    'Format',
+                    _tournament!.format.displayName,
+                  ),
                   if (_tournament!.location != null)
-                    _buildDetailRow(Icons.location_on, 'Location', _tournament!.location!),
+                    _buildDetailRow(
+                      Icons.location_on,
+                      'Location',
+                      _tournament!.location!,
+                    ),
                   if (_tournament!.venueDetails != null)
-                    _buildDetailRow(Icons.info, 'Venue', _tournament!.venueDetails!),
+                    _buildDetailRow(
+                      Icons.info,
+                      'Venue',
+                      _tournament!.venueDetails!,
+                    ),
                 ],
               ),
             ),
@@ -562,9 +626,8 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                       children: [
                         Text(
                           'Team Registrations',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const Chip(label: Text('0 teams')),
                       ],
