@@ -51,7 +51,9 @@ class _SignupScreenState extends State<SignupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Account created successfully! Please check your email to verify.'),
+            content: Text(
+              'Account created successfully! Please check your email to verify.',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -62,7 +64,8 @@ class _SignupScreenState extends State<SignupScreen> {
         String errorMessage = 'Signup failed';
 
         if (e.toString().contains('User already registered')) {
-          errorMessage = 'This email is already registered. Please login instead.';
+          errorMessage =
+              'This email is already registered. Please login instead.';
         } else if (e.toString().contains('Email not confirmed')) {
           errorMessage = 'Please check your email and confirm your account.';
         } else if (e.toString().contains('Invalid email')) {
@@ -93,9 +96,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Account'),
-      ),
+      appBar: AppBar(title: const Text('Create Account')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -113,8 +114,8 @@ class _SignupScreenState extends State<SignupScreen> {
                 Text(
                   'Join Tournament Scheduler',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -145,7 +146,9 @@ class _SignupScreenState extends State<SignupScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your email';
                     }
-                    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                    final emailRegex = RegExp(
+                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                    );
                     if (!emailRegex.hasMatch(value)) {
                       return 'Please enter a valid email address';
                     }
@@ -229,7 +232,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       onPressed: () {
                         setState(
-                            () => _obscureConfirmPassword = !_obscureConfirmPassword);
+                          () => _obscureConfirmPassword =
+                              !_obscureConfirmPassword,
+                        );
                       },
                     ),
                   ),
