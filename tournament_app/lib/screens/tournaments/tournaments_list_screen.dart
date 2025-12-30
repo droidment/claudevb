@@ -15,6 +15,7 @@ class TournamentsListScreen extends StatefulWidget {
 class _TournamentsListScreenState extends State<TournamentsListScreen> {
   final _tournamentService = TournamentService();
   List<Tournament> _tournaments = [];
+  Map<String, int> _teamCounts = {}; // tournament ID -> registered team count
   bool _isLoading = true;
   String? _error;
   String _selectedSport = 'all';
@@ -41,8 +42,18 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
         sportType: _selectedSport == 'all' ? null : _selectedSport,
         status: _selectedStatus,
       );
+
+      // Fetch registered team counts for all tournaments
+      final counts = <String, int>{};
+      await Future.wait(
+        tournaments.map((t) async {
+          counts[t.id] = await _tournamentService.getRegisteredTeamCount(t.id);
+        }),
+      );
+
       setState(() {
         _tournaments = tournaments;
+        _teamCounts = counts;
         _isLoading = false;
       });
     } catch (e) {
@@ -148,15 +159,12 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
             children: [
               Text(
                 'Filter Tournaments',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
-              Text(
-                'Sport Type',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
+              Text('Sport Type', style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -167,10 +175,7 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              Text(
-                'Status',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
+              Text('Status', style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -180,10 +185,7 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
                     'Open',
                     TournamentStatus.registrationOpen,
                   ),
-                  _buildStatusFilterChip(
-                    'Ongoing',
-                    TournamentStatus.ongoing,
-                  ),
+                  _buildStatusFilterChip('Ongoing', TournamentStatus.ongoing),
                   _buildStatusFilterChip(
                     'Completed',
                     TournamentStatus.completed,
@@ -191,10 +193,7 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              Text(
-                'Distance',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
+              Text('Distance', style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 8),
               SwitchListTile(
                 title: const Text('Show nearby tournaments only'),
@@ -370,16 +369,14 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
 
     final filteredTournaments = _filterTournaments();
 
-    if (filteredTournaments.isEmpty && _tournaments.isNotEmpty && _showNearbyOnly) {
+    if (filteredTournaments.isEmpty &&
+        _tournaments.isNotEmpty &&
+        _showNearbyOnly) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.location_off,
-              size: 100,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.location_off, size: 100, color: Colors.grey[400]),
             const SizedBox(height: 24),
             Text(
               'No Nearby Tournaments',
@@ -489,7 +486,10 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
               itemCount: filteredTournaments.length,
               itemBuilder: (context, index) {
                 final tournament = filteredTournaments[index];
-                final distance = tournament.distanceFrom(_userLatitude, _userLongitude);
+                final distance = tournament.distanceFrom(
+                  _userLatitude,
+                  _userLongitude,
+                );
                 return _buildTournamentCard(tournament, distance);
               },
             ),
@@ -600,18 +600,24 @@ class _TournamentsListScreenState extends State<TournamentsListScreen> {
                 ],
               ),
               if (tournament.maxTeams != null ||
-                  tournament.entryFee != null) ...[
+                  tournament.entryFee != null ||
+                  _teamCounts.containsKey(tournament.id)) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    if (tournament.maxTeams != null) ...[
-                      Icon(Icons.groups, size: 16, color: Colors.grey[600]),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Max ${tournament.maxTeams} teams',
-                        style: Theme.of(context).textTheme.bodySmall,
+                    Icon(Icons.groups, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      tournament.maxTeams != null
+                          ? '${_teamCounts[tournament.id] ?? 0}/${tournament.maxTeams} teams'
+                          : '${_teamCounts[tournament.id] ?? 0} teams registered',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: (_teamCounts[tournament.id] ?? 0) > 0
+                            ? Colors.green[700]
+                            : Colors.grey[600],
                       ),
-                    ],
+                    ),
                     if (tournament.entryFee != null) ...[
                       const SizedBox(width: 16),
                       Icon(
