@@ -51,7 +51,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   Future<void> _showAddPlayerDialog() async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => const AddPlayerDialog(),
+      builder: (context) => AddPlayerDialog(teamId: widget.teamId),
     );
 
     if (result == true) {
@@ -265,13 +265,16 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                        Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: Colors.grey[600],
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           _team!.homeCity!,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: Colors.grey[600]),
                         ),
                       ],
                     ),
@@ -288,9 +291,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
             children: [
               Text(
                 'Roster (${_players.length} players)',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
               if (_players.isNotEmpty)
                 Chip(
@@ -307,7 +310,11 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   children: [
-                    Icon(Icons.person_add_outlined, size: 64, color: Colors.grey[400]),
+                    Icon(
+                      Icons.person_add_outlined,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'No Players Yet',
@@ -316,9 +323,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Add players to your roster',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -352,7 +359,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
         subtitle: Text(
           [
             if (player.position != null)
-              VolleyballPositionExtension.fromString(player.position)?.displayName,
+              VolleyballPositionExtension.fromString(
+                player.position,
+              )?.displayName,
             if (player.heightInches != null) player.heightFormatted,
           ].where((e) => e != null).join(' • '),
         ),
@@ -394,7 +403,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
 
 // Add Player Dialog
 class AddPlayerDialog extends StatefulWidget {
-  const AddPlayerDialog({super.key});
+  final String teamId;
+
+  const AddPlayerDialog({super.key, required this.teamId});
 
   @override
   State<AddPlayerDialog> createState() => _AddPlayerDialogState();
@@ -481,11 +492,6 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    // Get team ID from the parent screen
-    final teamId = (context.findAncestorStateOfType<_TeamDetailScreenState>())
-        ?.widget
-        .teamId;
-
     return AlertDialog(
       title: const Text('Add Player'),
       content: Form(
@@ -519,7 +525,7 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<VolleyballPosition>(
-                initialValue: _selectedPosition,
+                value: _selectedPosition,
                 decoration: const InputDecoration(
                   labelText: 'Position',
                   border: OutlineInputBorder(),
@@ -570,9 +576,7 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _isLoading || teamId == null
-              ? null
-              : () => _addPlayer(teamId),
+          onPressed: _isLoading ? null : () => _addPlayer(widget.teamId),
           child: _isLoading
               ? const SizedBox(
                   width: 20,
@@ -627,7 +631,9 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
       _heightInchesController = TextEditingController();
     }
 
-    _selectedPosition = VolleyballPositionExtension.fromString(widget.player.position);
+    _selectedPosition = VolleyballPositionExtension.fromString(
+      widget.player.position,
+    );
   }
 
   @override
@@ -653,17 +659,14 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
         heightInches = (feet * 12) + inches;
       }
 
-      await _teamService.updatePlayer(
-        widget.player.id,
-        {
-          'name': _nameController.text.trim(),
-          'jersey_number': _jerseyController.text.isEmpty
-              ? null
-              : int.tryParse(_jerseyController.text),
-          'position': _selectedPosition?.dbValue,
-          'height_inches': heightInches,
-        },
-      );
+      await _teamService.updatePlayer(widget.player.id, {
+        'name': _nameController.text.trim(),
+        'jersey_number': _jerseyController.text.isEmpty
+            ? null
+            : int.tryParse(_jerseyController.text),
+        'position': _selectedPosition?.dbValue,
+        'height_inches': heightInches,
+      });
 
       if (mounted) {
         Navigator.of(context).pop(true);
@@ -725,7 +728,7 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<VolleyballPosition>(
-                initialValue: _selectedPosition,
+                value: _selectedPosition,
                 decoration: const InputDecoration(
                   labelText: 'Position',
                   border: OutlineInputBorder(),
