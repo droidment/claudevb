@@ -7,6 +7,7 @@ import '../../models/team.dart';
 import '../../services/tournament_service.dart';
 import 'edit_tournament_screen.dart';
 import 'add_teams_screen.dart';
+import 'manage_seeds_screen.dart';
 
 class TournamentDetailScreen extends StatefulWidget {
   final String tournamentId;
@@ -142,6 +143,22 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     if (result == true) {
       await _loadRegisteredTeams();
     }
+  }
+
+  Future<void> _navigateToManageSeeds() async {
+    if (_tournament == null) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ManageSeedsScreen(
+          tournamentId: _tournament!.id,
+          tournamentName: _tournament!.name,
+        ),
+      ),
+    );
+
+    // Refresh teams after returning from manage seeds
+    await _loadRegisteredTeams();
   }
 
   Future<void> _removeTeamFromTournament(String teamId, String teamName) async {
@@ -786,13 +803,28 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
             else
               Column(
                 children: [
-                  ..._registeredTeams.map((reg) => _buildTeamTile(reg)),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: _navigateToAddTeams,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add More Teams'),
+                  // Action buttons row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _navigateToManageSeeds,
+                          icon: const Icon(Icons.format_list_numbered),
+                          label: const Text('Manage Seeds'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _navigateToAddTeams,
+                          icon: const Icon(Icons.add),
+                          label: const Text('Add Teams'),
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 12),
+                  ..._registeredTeams.map((reg) => _buildTeamTile(reg)),
                 ],
               ),
           ],
@@ -809,7 +841,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     final teamId = teamData['id'] as String;
     final homeCity = teamData['home_city'] as String?;
     final teamColor = teamData['team_color'] as String?;
-    final registrationPaid = teamData['registration_paid'] as bool? ?? false;
+    // Use registration payment_status, not team's registration_paid
+    final paymentStatus =
+        registration['payment_status'] as String? ?? 'pending';
+    final isPaid = paymentStatus == 'paid';
     final poolAssignment = registration['pool_assignment'] as String?;
     final seedNumber = registration['seed_number'] as int?;
 
@@ -823,17 +858,47 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: avatarColor.withOpacity(0.2),
-          child: Text(
-            teamName.substring(0, 1).toUpperCase(),
-            style: TextStyle(fontWeight: FontWeight.bold, color: avatarColor),
-          ),
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Seed badge
+            if (seedNumber != null)
+              Container(
+                width: 28,
+                height: 28,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade100,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.amber.shade400),
+                ),
+                child: Center(
+                  child: Text(
+                    '$seedNumber',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: Colors.amber.shade800,
+                    ),
+                  ),
+                ),
+              ),
+            CircleAvatar(
+              backgroundColor: avatarColor.withOpacity(0.2),
+              child: Text(
+                teamName.substring(0, 1).toUpperCase(),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: avatarColor,
+                ),
+              ),
+            ),
+          ],
         ),
         title: Row(
           children: [
             Expanded(child: Text(teamName)),
-            if (registrationPaid)
+            if (isPaid)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
@@ -846,6 +911,22 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
                     color: Colors.green,
+                  ),
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'UNPAID',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange.shade700,
                   ),
                 ),
               ),
@@ -928,55 +1009,139 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     final teamName = teamData['name'] as String? ?? 'Team';
     String? poolAssignment = registration['pool_assignment'] as String?;
     int? seedNumber = registration['seed_number'] as int?;
+    final paymentStatusStr =
+        registration['payment_status'] as String? ?? 'pending';
+    PaymentStatus paymentStatus = PaymentStatusExtension.fromString(
+      paymentStatusStr,
+    );
 
     final poolController = TextEditingController(text: poolAssignment ?? '');
     final seedController = TextEditingController(
       text: seedNumber?.toString() ?? '',
     );
 
-    final result = await showDialog<bool>(
+    final result = await showDialog<Map<String, dynamic>?>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Edit $teamName'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: poolController,
-              decoration: const InputDecoration(
-                labelText: 'Pool Assignment',
-                hintText: 'e.g., A, B, C',
-                border: OutlineInputBorder(),
+      builder: (context) {
+        PaymentStatus dialogPaymentStatus = paymentStatus;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: Text('Edit $teamName'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Payment Status Toggle
+                  Card(
+                    color: dialogPaymentStatus == PaymentStatus.paid
+                        ? Colors.green.shade50
+                        : Colors.orange.shade50,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Icon(
+                            dialogPaymentStatus == PaymentStatus.paid
+                                ? Icons.check_circle
+                                : Icons.pending,
+                            color: dialogPaymentStatus == PaymentStatus.paid
+                                ? Colors.green
+                                : Colors.orange,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Payment Status',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  dialogPaymentStatus.displayName,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        dialogPaymentStatus ==
+                                            PaymentStatus.paid
+                                        ? Colors.green.shade700
+                                        : Colors.orange.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: dialogPaymentStatus == PaymentStatus.paid,
+                            activeColor: Colors.green,
+                            onChanged: (value) {
+                              setDialogState(() {
+                                dialogPaymentStatus = value
+                                    ? PaymentStatus.paid
+                                    : PaymentStatus.pending;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Seed Number
+                  TextField(
+                    controller: seedController,
+                    decoration: const InputDecoration(
+                      labelText: 'Seed Number',
+                      hintText: 'e.g., 1, 2, 3',
+                      helperText: 'Lower number = stronger team',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.format_list_numbered),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Pool Assignment
+                  TextField(
+                    controller: poolController,
+                    decoration: const InputDecoration(
+                      labelText: 'Pool Assignment',
+                      hintText: 'e.g., A, B, C',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.grid_view),
+                    ),
+                    textCapitalization: TextCapitalization.characters,
+                  ),
+                ],
               ),
-              textCapitalization: TextCapitalization.characters,
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: seedController,
-              decoration: const InputDecoration(
-                labelText: 'Seed Number',
-                hintText: 'e.g., 1, 2, 3',
-                border: OutlineInputBorder(),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(null),
+                child: const Text('Cancel'),
               ),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+              FilledButton(
+                onPressed: () => Navigator.of(
+                  context,
+                ).pop({'paymentStatus': dialogPaymentStatus, 'save': true}),
+                child: const Text('Save'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
-    if (result == true) {
+    if (result != null && result['save'] == true) {
       try {
+        final newPaymentStatus = result['paymentStatus'] as PaymentStatus;
         await _tournamentService.updateRegistration(
           tournamentId: widget.tournamentId,
           teamId: teamId,
@@ -984,6 +1149,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               ? poolController.text.toUpperCase()
               : null,
           seedNumber: int.tryParse(seedController.text),
+          paymentStatus: newPaymentStatus,
         );
         await _loadRegisteredTeams();
         if (mounted) {
