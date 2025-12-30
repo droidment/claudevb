@@ -171,6 +171,186 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
     }
   }
 
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    return '${date.month}/${date.day}/${date.year}';
+  }
+
+  Widget _buildRegistrationInfoCard() {
+    final hasContactInfo =
+        _team!.captainName != null ||
+        _team!.captainEmail != null ||
+        _team!.captainPhone != null ||
+        _team!.contactPerson2 != null;
+
+    final hasRegistrationInfo =
+        _team!.registrationDate != null ||
+        _team!.specialRequests != null ||
+        _team!.signedBy != null ||
+        _team!.notes != null;
+
+    if (!hasContactInfo && !hasRegistrationInfo) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Registration Info',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+
+            // Captain Information
+            if (_team!.captainName != null)
+              _buildInfoRow(Icons.person, 'Captain', _team!.captainName!),
+            if (_team!.captainEmail != null)
+              _buildInfoRow(Icons.email, 'Email', _team!.captainEmail!),
+            if (_team!.captainPhone != null)
+              _buildInfoRow(Icons.phone, 'Phone', _team!.captainPhone!),
+
+            // Contact Person 2
+            if (_team!.contactPerson2 != null) ...[
+              const Divider(height: 24),
+              _buildInfoRow(
+                Icons.person_outline,
+                'Contact Person 2',
+                _team!.contactPerson2!,
+              ),
+              if (_team!.contactPhone2 != null)
+                _buildInfoRow(
+                  Icons.phone_outlined,
+                  'Phone 2',
+                  _team!.contactPhone2!,
+                ),
+            ],
+
+            // Registration Details
+            if (hasRegistrationInfo) ...[
+              const Divider(height: 24),
+              if (_team!.registrationDate != null)
+                _buildInfoRow(
+                  Icons.calendar_today,
+                  'Registered',
+                  _formatDate(_team!.registrationDate),
+                ),
+              if (_team!.signedBy != null)
+                _buildInfoRow(Icons.draw, 'Signed By', _team!.signedBy!),
+              if (_team!.specialRequests != null &&
+                  _team!.specialRequests!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.note, size: 20, color: Colors.grey[600]),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Special Requests',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              _team!.specialRequests!,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              if (_team!.notes != null && _team!.notes!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.sticky_note_2,
+                      size: 20,
+                      color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Notes',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _team!.notes!,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: Colors.grey[600]),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -279,10 +459,159 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                       ],
                     ),
                   ],
+                  if (_team!.category != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade100,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        _team!.category!,
+                        style: TextStyle(
+                          color: Colors.blue.shade800,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                  // Payment status badges
+                  const SizedBox(height: 12),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (_team!.registrationPaid)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                size: 16,
+                                color: Colors.green.shade700,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'PAID',
+                                style: TextStyle(
+                                  color: Colors.green.shade700,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade100,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.pending,
+                                size: 16,
+                                color: Colors.orange.shade700,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'PENDING',
+                                style: TextStyle(
+                                  color: Colors.orange.shade700,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (_team!.lunchCount > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade100,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.restaurant,
+                                size: 16,
+                                color: Colors.amber.shade800,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${_team!.lunchCount} Lunches',
+                                style: TextStyle(
+                                  color: Colors.amber.shade800,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (_team!.playerCount != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.shade100,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.group,
+                                size: 16,
+                                color: Colors.purple.shade700,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${_team!.playerCount} Players',
+                                style: TextStyle(
+                                  color: Colors.purple.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),
           ),
+          const SizedBox(height: 16),
+
+          // Registration Info Section
+          _buildRegistrationInfoCard(),
           const SizedBox(height: 16),
 
           // Roster Section
