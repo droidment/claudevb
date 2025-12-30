@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/tournament.dart';
+import '../../models/tournament_registration.dart';
+import '../../models/team.dart';
 import '../../services/tournament_service.dart';
 import 'edit_tournament_screen.dart';
+import 'add_teams_screen.dart';
 
 class TournamentDetailScreen extends StatefulWidget {
   final String tournamentId;
@@ -22,7 +25,9 @@ class TournamentDetailScreen extends StatefulWidget {
 class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
   final _tournamentService = TournamentService();
   Tournament? _tournament;
+  List<Map<String, dynamic>> _registeredTeams = [];
   bool _isLoading = true;
+  bool _isLoadingTeams = false;
   String? _error;
 
   /// Check if current user is the organizer of this tournament
@@ -52,11 +57,32 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         _tournament = tournament;
         _isLoading = false;
       });
+      // Load teams after tournament loads
+      _loadRegisteredTeams();
     } catch (e) {
       setState(() {
         _error = e.toString();
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _loadRegisteredTeams() async {
+    if (!_isCurrentUserOrganizer) return;
+
+    setState(() => _isLoadingTeams = true);
+
+    try {
+      final teams = await _tournamentService.getTournamentTeams(
+        widget.tournamentId,
+      );
+      setState(() {
+        _registeredTeams = teams;
+        _isLoadingTeams = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingTeams = false);
+      // Silently fail - teams section will show error state
     }
   }
 
@@ -98,6 +124,73 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
 
     if (result == true) {
       await _loadTournament();
+    }
+  }
+
+  Future<void> _navigateToAddTeams() async {
+    if (_tournament == null) return;
+
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => AddTeamsScreen(
+          tournamentId: _tournament!.id,
+          tournamentName: _tournament!.name,
+        ),
+      ),
+    );
+
+    if (result == true) {
+      await _loadRegisteredTeams();
+    }
+  }
+
+  Future<void> _removeTeamFromTournament(String teamId, String teamName) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Team'),
+        content: Text(
+          'Are you sure you want to remove "$teamName" from this tournament?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await _tournamentService.removeTeamFromTournament(
+          tournamentId: widget.tournamentId,
+          teamId: teamId,
+        );
+        await _loadRegisteredTeams();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$teamName removed from tournament'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error removing team: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -616,42 +709,305 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Registrations section (placeholder for future)
-          if (widget.isOrganizer)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Team Registrations',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const Chip(label: Text('0 teams')),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text(
-                          'Registration management coming soon',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          // Registrations section
+          if (_isCurrentUserOrganizer) _buildTeamsSection(),
         ],
       ),
     );
+  }
+
+  Widget _buildTeamsSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Registered Teams',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Chip(
+                      label: Text(
+                        '${_registeredTeams.length} team${_registeredTeams.length == 1 ? '' : 's'}',
+                      ),
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle),
+                      color: Theme.of(context).colorScheme.primary,
+                      onPressed: _navigateToAddTeams,
+                      tooltip: 'Add Teams',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (_isLoadingTeams)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_registeredTeams.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Icon(Icons.group_off, size: 48, color: Colors.grey[400]),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No teams registered yet',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: _navigateToAddTeams,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Teams'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Column(
+                children: [
+                  ..._registeredTeams.map((reg) => _buildTeamTile(reg)),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _navigateToAddTeams,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add More Teams'),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTeamTile(Map<String, dynamic> registration) {
+    final teamData = registration['teams'] as Map<String, dynamic>?;
+    if (teamData == null) return const SizedBox.shrink();
+
+    final teamName = teamData['name'] as String? ?? 'Unknown Team';
+    final teamId = teamData['id'] as String;
+    final homeCity = teamData['home_city'] as String?;
+    final teamColor = teamData['team_color'] as String?;
+    final registrationPaid = teamData['registration_paid'] as bool? ?? false;
+    final poolAssignment = registration['pool_assignment'] as String?;
+    final seedNumber = registration['seed_number'] as int?;
+
+    Color avatarColor = Colors.blue;
+    if (teamColor != null) {
+      try {
+        avatarColor = Color(int.parse(teamColor.replaceFirst('#', '0xFF')));
+      } catch (_) {}
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: avatarColor.withOpacity(0.2),
+          child: Text(
+            teamName.substring(0, 1).toUpperCase(),
+            style: TextStyle(fontWeight: FontWeight.bold, color: avatarColor),
+          ),
+        ),
+        title: Row(
+          children: [
+            Expanded(child: Text(teamName)),
+            if (registrationPaid)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'PAID',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        subtitle: Row(
+          children: [
+            if (homeCity != null) ...[
+              Icon(Icons.location_on, size: 12, color: Colors.grey[500]),
+              const SizedBox(width: 2),
+              Text(
+                homeCity,
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+            if (poolAssignment != null) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'Pool $poolAssignment',
+                  style: TextStyle(fontSize: 10, color: Colors.blue.shade700),
+                ),
+              ),
+            ],
+            if (seedNumber != null) ...[
+              const SizedBox(width: 4),
+              Text(
+                '#$seedNumber',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ],
+        ),
+        trailing: PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert),
+          onSelected: (value) {
+            if (value == 'remove') {
+              _removeTeamFromTournament(teamId, teamName);
+            } else if (value == 'edit') {
+              _editTeamRegistration(registration);
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'edit',
+              child: ListTile(
+                leading: Icon(Icons.edit),
+                title: Text('Edit Registration'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'remove',
+              child: ListTile(
+                leading: Icon(Icons.remove_circle, color: Colors.red),
+                title: Text('Remove', style: TextStyle(color: Colors.red)),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editTeamRegistration(Map<String, dynamic> registration) async {
+    final teamData = registration['teams'] as Map<String, dynamic>?;
+    if (teamData == null) return;
+
+    final teamId = teamData['id'] as String;
+    final teamName = teamData['name'] as String? ?? 'Team';
+    String? poolAssignment = registration['pool_assignment'] as String?;
+    int? seedNumber = registration['seed_number'] as int?;
+
+    final poolController = TextEditingController(text: poolAssignment ?? '');
+    final seedController = TextEditingController(
+      text: seedNumber?.toString() ?? '',
+    );
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit $teamName'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: poolController,
+              decoration: const InputDecoration(
+                labelText: 'Pool Assignment',
+                hintText: 'e.g., A, B, C',
+                border: OutlineInputBorder(),
+              ),
+              textCapitalization: TextCapitalization.characters,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: seedController,
+              decoration: const InputDecoration(
+                labelText: 'Seed Number',
+                hintText: 'e.g., 1, 2, 3',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      try {
+        await _tournamentService.updateRegistration(
+          tournamentId: widget.tournamentId,
+          teamId: teamId,
+          poolAssignment: poolController.text.isNotEmpty
+              ? poolController.text.toUpperCase()
+              : null,
+          seedNumber: int.tryParse(seedController.text),
+        );
+        await _loadRegisteredTeams();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$teamName registration updated'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error updating registration: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+
+    poolController.dispose();
+    seedController.dispose();
   }
 
   Widget _buildDetailRow(IconData icon, String label, String value) {
