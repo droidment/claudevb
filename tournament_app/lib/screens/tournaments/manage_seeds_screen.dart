@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../models/tournament.dart';
-import '../../models/tournament_registration.dart';
 import '../../services/tournament_service.dart';
 
 class ManageSeedsScreen extends StatefulWidget {

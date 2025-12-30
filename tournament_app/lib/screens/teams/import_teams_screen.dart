@@ -327,7 +327,7 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _selectedCategory,
+                      initialValue: _selectedCategory,
                       decoration: const InputDecoration(
                         labelText: 'Filter by Category',
                         border: OutlineInputBorder(),
