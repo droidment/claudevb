@@ -8,6 +8,7 @@ class TeamService {
     required String name,
     String? homeCity,
     String? teamColor,
+    String sportType = 'volleyball',
   }) async {
     final user = supabase.auth.currentUser;
     if (user == null) {
@@ -19,6 +20,7 @@ class TeamService {
       'captain_id': user.id,
       'home_city': homeCity,
       'team_color': teamColor,
+      'sport_type': sportType,
     };
 
     final response = await supabase
@@ -184,6 +186,7 @@ class TeamService {
     double? paymentAmount,
     int lunchCount = 0,
     String? notes,
+    String sportType = 'volleyball',
   }) async {
     final user = supabase.auth.currentUser;
     if (user == null) {
@@ -195,6 +198,7 @@ class TeamService {
       'captain_id': user.id, // Organizer becomes the owner
       'home_city': homeCity,
       'team_color': teamColor,
+      'sport_type': sportType,
       'registration_paid': registrationPaid,
       'payment_amount': paymentAmount,
       'payment_date': registrationPaid

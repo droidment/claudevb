@@ -5,6 +5,7 @@ class Team {
   final String? logoUrl;
   final String? homeCity;
   final String? teamColor;
+  final String sportType; // 'volleyball' or 'pickleball'
   final bool registrationPaid;
   final double? paymentAmount;
   final DateTime? paymentDate;
@@ -30,6 +31,7 @@ class Team {
     this.logoUrl,
     this.homeCity,
     this.teamColor,
+    this.sportType = 'volleyball',
     this.registrationPaid = false,
     this.paymentAmount,
     this.paymentDate,
@@ -49,6 +51,17 @@ class Team {
     required this.updatedAt,
   });
 
+  /// Display name for the sport type
+  String get sportTypeDisplayName {
+    switch (sportType) {
+      case 'pickleball':
+        return 'Pickleball';
+      case 'volleyball':
+      default:
+        return 'Volleyball';
+    }
+  }
+
   factory Team.fromJson(Map<String, dynamic> json) {
     return Team(
       id: json['id'] as String,
@@ -57,6 +70,7 @@ class Team {
       logoUrl: json['logo_url'] as String?,
       homeCity: json['home_city'] as String?,
       teamColor: json['team_color'] as String?,
+      sportType: json['sport_type'] as String? ?? 'volleyball',
       registrationPaid: json['registration_paid'] as bool? ?? false,
       paymentAmount: (json['payment_amount'] as num?)?.toDouble(),
       paymentDate: json['payment_date'] != null
@@ -89,6 +103,7 @@ class Team {
       'logo_url': logoUrl,
       'home_city': homeCity,
       'team_color': teamColor,
+      'sport_type': sportType,
       'registration_paid': registrationPaid,
       'payment_amount': paymentAmount,
       'payment_date': paymentDate?.toIso8601String(),
@@ -116,6 +131,7 @@ class Team {
       'logo_url': logoUrl,
       'home_city': homeCity,
       'team_color': teamColor,
+      'sport_type': sportType,
       'registration_paid': registrationPaid,
       'payment_amount': paymentAmount,
       'payment_date': paymentDate?.toIso8601String(),
@@ -141,6 +157,7 @@ class Team {
     String? logoUrl,
     String? homeCity,
     String? teamColor,
+    String? sportType,
     bool? registrationPaid,
     double? paymentAmount,
     DateTime? paymentDate,
@@ -166,6 +183,7 @@ class Team {
       logoUrl: logoUrl ?? this.logoUrl,
       homeCity: homeCity ?? this.homeCity,
       teamColor: teamColor ?? this.teamColor,
+      sportType: sportType ?? this.sportType,
       registrationPaid: registrationPaid ?? this.registrationPaid,
       paymentAmount: paymentAmount ?? this.paymentAmount,
       paymentDate: paymentDate ?? this.paymentDate,

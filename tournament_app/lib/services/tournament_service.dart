@@ -256,18 +256,23 @@ class TournamentService {
   }
 
   /// Get teams available to add (not yet registered)
-  Future<List<Team>> getAvailableTeams(String tournamentId) async {
+  /// Optionally filter by sport type to match the tournament's sport
+  Future<List<Team>> getAvailableTeams(
+    String tournamentId, {
+    String? sportType,
+  }) async {
     // Get all teams owned by current user
     final user = supabase.auth.currentUser;
     if (user == null) {
       throw Exception('User must be logged in');
     }
 
-    // Get all teams
-    final teamsResponse = await supabase
-        .from('teams')
-        .select()
-        .eq('captain_id', user.id);
+    // Get all teams, optionally filtered by sport type
+    var teamsQuery = supabase.from('teams').select().eq('captain_id', user.id);
+    if (sportType != null) {
+      teamsQuery = teamsQuery.eq('sport_type', sportType);
+    }
+    final teamsResponse = await teamsQuery;
 
     // Get already registered team IDs
     final registeredResponse = await supabase
