@@ -253,18 +253,15 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   void _checkAndCompleteMatch() {
-    if (_match == null || _sets.length < 2) return;
+    if (_match == null) return;
 
-    // Auto-complete if a team has won best of 3 (2 sets) or best of 5 (3 sets)
+    // Use scoring format to determine when match is complete
+    final setsToWin = widget.scoringFormat.setsToWin;
     final team1SetsWon = _sets.where((s) => s.winningTeam == 1).length;
     final team2SetsWon = _sets.where((s) => s.winningTeam == 2).length;
 
-    bool shouldComplete = false;
-    if (_sets.length >= 2 && (team1SetsWon >= 2 || team2SetsWon >= 2)) {
-      shouldComplete = true; // Best of 3
-    } else if (_sets.length >= 3 && (team1SetsWon >= 3 || team2SetsWon >= 3)) {
-      shouldComplete = true; // Best of 5
-    }
+    // Check if either team has won enough sets
+    final shouldComplete = team1SetsWon >= setsToWin || team2SetsWon >= setsToWin;
 
     if (shouldComplete && _match!.status != MatchStatus.completed) {
       _updateMatchStatus(MatchStatus.completed);

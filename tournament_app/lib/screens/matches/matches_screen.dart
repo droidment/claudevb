@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/match.dart';
+import '../../models/scoring_format.dart';
 import '../../services/match_service.dart';
 import 'match_detail_screen.dart';
 
@@ -7,12 +8,14 @@ class MatchesScreen extends StatefulWidget {
   final String tournamentId;
   final String tournamentName;
   final bool isOrganizer;
+  final ScoringFormat scoringFormat;
 
   const MatchesScreen({
     super.key,
     required this.tournamentId,
     required this.tournamentName,
     this.isOrganizer = false,
+    this.scoringFormat = ScoringFormat.singleSet,
   });
 
   @override
@@ -97,6 +100,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
         builder: (context) => MatchDetailScreen(
           matchId: match.id,
           isOrganizer: widget.isOrganizer,
+          scoringFormat: widget.scoringFormat,
         ),
       ),
     );

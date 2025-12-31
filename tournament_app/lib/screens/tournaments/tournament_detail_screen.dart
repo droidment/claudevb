@@ -38,6 +38,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
   bool _hasMatches = false;
   int _matchCount = 0;
   String? _error;
+  ScoringFormat _scoringFormat = ScoringFormat.singleSet;
 
   /// Check if current user is the organizer of this tournament
   bool get _isCurrentUserOrganizer {
@@ -241,6 +242,11 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
 
     if (config == null) return; // User cancelled
 
+    // Store the scoring format for later use when navigating to matches
+    setState(() {
+      _scoringFormat = config['scoringFormat'] as ScoringFormat;
+    });
+
     try {
       // Show loading indicator
       if (mounted) {
@@ -340,6 +346,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           tournamentId: widget.tournamentId,
           tournamentName: _tournament!.name,
           isOrganizer: _isCurrentUserOrganizer,
+          scoringFormat: _scoringFormat,
         ),
       ),
     );
