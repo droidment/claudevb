@@ -16,6 +16,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
 
   bool _isLoading = false;
   Color _selectedColor = Colors.blue;
+  String _selectedSportType = 'volleyball';
 
   final List<Color> _availableColors = [
     Colors.blue,
@@ -53,6 +54,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
             ? null
             : _homeCityController.text.trim(),
         teamColor: _colorToHex(_selectedColor),
+        sportType: _selectedSportType,
       );
 
       if (mounted) {
@@ -179,6 +181,32 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
               ),
               textCapitalization: TextCapitalization.words,
               onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 16),
+
+            // Sport Type
+            DropdownButtonFormField<String>(
+              initialValue: _selectedSportType,
+              decoration: const InputDecoration(
+                labelText: 'Sport Type *',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.sports),
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: 'volleyball',
+                  child: Text('Volleyball'),
+                ),
+                DropdownMenuItem(
+                  value: 'pickleball',
+                  child: Text('Pickleball'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _selectedSportType = value);
+                }
+              },
             ),
             const SizedBox(height: 24),
 

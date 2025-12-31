@@ -54,10 +54,11 @@ flutter --version                  # Check Flutter version
 
 ### Key Services
 - **AuthService** (`lib/services/auth_service.dart`) - Handles signup/signin, user profiles
-- **TeamService** (`lib/services/team_service.dart`) - Team CRUD, player management, CSV import
+- **TeamService** (`lib/services/team_service.dart`) - Team CRUD, player management, CSV import, sport type filtering
 - **TournamentService** (`lib/services/tournament_service.dart`) - Tournament CRUD, team registration, invite codes
 - **MatchService** (`lib/services/match_service.dart`) - Match CRUD, set scores, winner calculation
 - **RoundRobinGenerator** (`lib/services/round_robin_generator.dart`) - Round robin match generation algorithm
+- **TournamentStaffService** (`lib/services/tournament_staff_service.dart`) - Staff role management (admins/scorers)
 
 ### Models Pattern
 All models in `lib/models/` follow this pattern:
@@ -69,14 +70,15 @@ All models in `lib/models/` follow this pattern:
 - Enums with extensions for `displayName`, `dbValue`, and `fromString()`
 
 ### Database Schema (Supabase)
-7 tables with Row Level Security (RLS):
+8 tables with Row Level Security (RLS):
 1. `user_profiles` - User accounts with roles (captain, organizer, admin)
-2. `tournaments` - Tournament details, formats, geo-location, privacy settings
-3. `teams` - Teams with extended CSV import fields (captain info, payment, lunch counts)
+2. `tournaments` - Tournament details, formats, geo-location, privacy settings, scoring config
+3. `teams` - Teams with sport_type, extended CSV import fields (captain info, payment, lunch counts)
 4. `players` - Player rosters with volleyball positions
-5. `tournament_registrations` - Team registrations with pool/seed assignments
+5. `tournament_registrations` - Team registrations with pool/seed assignments, lunch counts
 6. `matches` - Match schedules and scores
 7. `match_sets` - Individual set scores
+8. `tournament_staff` - Per-tournament admin and scorer role assignments
 
 **Important**: Database triggers auto-create user profiles on signup and auto-generate invite codes for private tournaments.
 
@@ -92,7 +94,14 @@ All models in `lib/models/` follow this pattern:
 - **Tournament Organizer** (`isOrganizer`): Create tournaments, approve registrations, manage matches
 - **Admin** (`isAdmin`): All permissions
 
-Check `UserProfile.isCaptain`, `isOrganizer`, `isAdmin` for permission logic.
+#### Per-Tournament Staff Roles
+Tournament organizers can assign additional staff via `tournament_staff` table:
+- **Tournament Admin**: Full tournament control (like organizer) - can manage teams, generate schedules, update scores
+- **Scorer**: Can only start matches and update scores - cannot modify tournament settings or teams
+
+Check `TournamentPermissions` class for permission logic:
+- `canManageTournament`: Owner or admin role
+- `canManageScores`: Owner, admin, or scorer role
 
 ### Authentication Flow
 1. Entry point: `AuthWrapper` in `main.dart` listens to `supabase.auth.onAuthStateChange`
@@ -197,7 +206,10 @@ Before running the app, execute SQL migrations in Supabase SQL Editor:
 1. Run all SQL from `tournament_app/DATABASE_SCHEMA.md` (creates tables, RLS, triggers)
 2. Run `database_migration_privacy_geolocation.sql` (adds privacy/geo features)
 3. Run `database_migration_team_extended_fields.sql` (adds CSV import fields to teams)
-4. Enable Email provider in Supabase Dashboard → Authentication → Settings
+4. Run `database_migration_tournament_staff.sql` (adds tournament staff table for multi-admin)
+5. Run `database_migration_tournament_staff_fix.sql` (fixes RLS infinite recursion)
+6. Run `database_migration_team_sport_type.sql` (adds sport_type to teams)
+7. Enable Email provider in Supabase Dashboard → Authentication → Settings
 
 Alternative: Use `setup_database.js` (requires Node.js and Supabase service key).
 
@@ -229,6 +241,62 @@ Currently using vanilla Flutter state management (StatefulWidget, setState). No 
 
 ### Navigation
 Route-based navigation with named routes in `main.dart`. Auth state determines initial route via `AuthWrapper`.
+
+## Tournament Staff System
+
+### Overview
+Allows tournament organizers to assign additional admins and scorers per tournament.
+
+### Key Files
+- `lib/models/tournament_staff.dart` - TournamentStaff model with StaffRole enum
+- `lib/services/tournament_staff_service.dart` - CRUD operations for staff assignments
+- `lib/screens/tournaments/manage_staff_screen.dart` - UI for managing staff
+
+### Database Migration
+Run `database_migration_tournament_staff.sql` to create the `tournament_staff` table with RLS policies.
+
+If you encounter "infinite recursion detected in policy" error, run `database_migration_tournament_staff_fix.sql` to fix RLS policies (simplifies to organizer-only management).
+
+### Permission Hierarchy
+1. **Owner** (tournament.organizer_id): Full control, can add/remove staff
+2. **Admin** (tournament_staff.role = 'admin'): Full tournament control except staff management
+3. **Scorer** (tournament_staff.role = 'scorer'): Can only update match scores
+
+## Team Sport Type Filtering
+
+### Overview
+Teams have a `sport_type` field ('volleyball' or 'pickleball'). When adding teams to a tournament, only teams matching the tournament's sport type are shown.
+
+### Database Migration
+Run `database_migration_team_sport_type.sql` to add the `sport_type` column to the teams table.
+
+### Implementation
+- `Team.sportType` field with default 'volleyball'
+- `TeamService.createTeam()` accepts `sportType` parameter
+- `TournamentService.getAvailableTeams()` filters by sport type
+- `AddTeamsScreen` displays sport type filter info in header
+
+## Scoring Configuration
+
+### Overview
+Phase-based scoring configuration for tournaments. Different scoring rules can be set for pool play, quarter-finals, semi-finals, and finals.
+
+### Key Files
+- `lib/models/scoring_config.dart` - TournamentScoringConfig and PhaseScoringConfig models
+- `lib/screens/tournaments/scoring_config_screen.dart` - UI for configuring scoring rules
+
+### Phase Types
+- Pool Play
+- Quarter Finals
+- Semi Finals
+- Finals
+
+### Configurable Options (per phase)
+- Sets to win (best of 1, 3, or 5)
+- Points to win per set
+- Win by 2 requirement
+- Point cap (optional)
+- Tiebreaker set rules
 
 ## Important Copilot Instructions
 

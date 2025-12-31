@@ -5,11 +5,13 @@ import '../../services/tournament_service.dart';
 class AddTeamsScreen extends StatefulWidget {
   final String tournamentId;
   final String tournamentName;
+  final String sportType;
 
   const AddTeamsScreen({
     super.key,
     required this.tournamentId,
     required this.tournamentName,
+    required this.sportType,
   });
 
   @override
@@ -39,6 +41,7 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
     try {
       final teams = await _tournamentService.getAvailableTeams(
         widget.tournamentId,
+        sportType: widget.sportType,
       );
       setState(() {
         _availableTeams = teams;
@@ -178,6 +181,24 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
                     color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.sports,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Showing ${widget.sportType == 'volleyball' ? 'Volleyball' : 'Pickleball'} teams only',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ],
+                ),
                 if (_selectedTeamIds.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(
@@ -249,6 +270,8 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
     }
 
     if (_availableTeams.isEmpty) {
+      final sportTypeName =
+          widget.sportType == 'volleyball' ? 'Volleyball' : 'Pickleball';
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -256,14 +279,14 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
             Icon(Icons.group_off, size: 80, color: Colors.grey[400]),
             const SizedBox(height: 24),
             Text(
-              'No Teams Available',
+              'No $sportTypeName Teams Available',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
-                'All your teams have already been added to this tournament, or you haven\'t created any teams yet.',
+                'All your $sportTypeName teams have already been added to this tournament, or you haven\'t created any $sportTypeName teams yet.',
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,

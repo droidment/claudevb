@@ -450,6 +450,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         builder: (context) => AddTeamsScreen(
           tournamentId: _tournament!.id,
           tournamentName: _tournament!.name,
+          sportType: _tournament!.sportType,
         ),
       ),
     );
