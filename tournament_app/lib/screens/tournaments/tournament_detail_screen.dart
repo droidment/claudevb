@@ -4,8 +4,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/tournament.dart';
 import '../../models/tournament_registration.dart';
 import '../../models/scoring_format.dart';
+import '../../models/tournament_staff.dart';
 import '../../services/tournament_service.dart';
 import '../../services/match_service.dart';
+import '../../services/tournament_staff_service.dart';
 import '../../services/round_robin_generator.dart';
 import '../matches/matches_screen.dart';
 import '../matches/standings_screen.dart';
@@ -16,6 +18,7 @@ import 'add_teams_screen.dart';
 import 'manage_seeds_screen.dart';
 import 'manage_lunches_screen.dart';
 import 'scoring_config_screen.dart';
+import 'manage_staff_screen.dart';
 import '../../models/scoring_config.dart';
 
 class TournamentDetailScreen extends StatefulWidget {
@@ -35,6 +38,7 @@ class TournamentDetailScreen extends StatefulWidget {
 class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
   final _tournamentService = TournamentService();
   final _matchService = MatchService();
+  final _staffService = TournamentStaffService();
   Tournament? _tournament;
   List<Map<String, dynamic>> _registeredTeams = [];
   bool _isLoading = true;
@@ -43,6 +47,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
   int _matchCount = 0;
   String? _error;
   ScoringFormat _scoringFormat = ScoringFormat.singleSet;
+  TournamentPermissions _permissions = TournamentPermissions.none;
 
   /// Check if current user is the organizer of this tournament
   bool get _isCurrentUserOrganizer {
@@ -50,6 +55,12 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     if (currentUserId == null || _tournament == null) return false;
     return _tournament!.organizerId == currentUserId || widget.isOrganizer;
   }
+
+  /// Check if current user can manage the tournament (owner or admin)
+  bool get _canManageTournament => _permissions.canManageTournament || _isCurrentUserOrganizer;
+
+  /// Check if current user can manage scores (owner, admin, or scorer)
+  bool get _canManageScores => _permissions.canManageScores || _isCurrentUserOrganizer;
 
   /// Check if tournament format supports schedule generation
   /// Round robin, pool play, and pool play to leagues all use round robin scheduling
@@ -76,8 +87,15 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
       final tournament = await _tournamentService.getTournament(
         widget.tournamentId,
       );
+
+      // Load user's permissions for this tournament
+      final permissions = await _staffService.getPermissionsForTournament(
+        widget.tournamentId,
+      );
+
       setState(() {
         _tournament = tournament;
+        _permissions = permissions;
         _isLoading = false;
       });
       // Load teams after tournament loads
@@ -91,7 +109,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
   }
 
   Future<void> _loadRegisteredTeams() async {
-    if (!_isCurrentUserOrganizer) return;
+    if (!_canManageTournament) return;
 
     setState(() => _isLoadingTeams = true);
 
@@ -349,7 +367,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         builder: (context) => MatchesScreen(
           tournamentId: widget.tournamentId,
           tournamentName: _tournament!.name,
-          isOrganizer: _isCurrentUserOrganizer,
+          isOrganizer: _canManageScores, // Allow admins and scorers to manage scores
           scoringFormat: _scoringFormat,
           tournamentScoringConfig: _tournament!.scoringConfig,
         ),
@@ -368,7 +386,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         builder: (context) => StandingsScreen(
           tournamentId: widget.tournamentId,
           tournamentName: _tournament!.name,
-          isOrganizer: _isCurrentUserOrganizer,
+          isOrganizer: _canManageScores, // Allow admins and scorers to manage scores
           scoringFormat: _scoringFormat,
           venue: _tournament!.location,
           tournamentScoringConfig: _tournament!.scoringConfig,
@@ -385,7 +403,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         builder: (context) => BracketScreen(
           tournamentId: widget.tournamentId,
           tournamentName: _tournament!.name,
-          isOrganizer: _isCurrentUserOrganizer,
+          isOrganizer: _canManageScores, // Allow admins and scorers to manage scores
           scoringFormat: _scoringFormat,
           tournamentScoringConfig: _tournament!.scoringConfig,
         ),
@@ -401,7 +419,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         builder: (context) => TournamentResultsScreen(
           tournamentId: widget.tournamentId,
           tournamentName: _tournament!.name,
-          isOrganizer: _isCurrentUserOrganizer,
+          isOrganizer: _canManageTournament, // Only admins can close tournament
         ),
       ),
     );
@@ -511,6 +529,22 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         }
       }
     }
+  }
+
+  Future<void> _navigateToManageStaff() async {
+    if (_tournament == null) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ManageStaffScreen(
+          tournamentId: _tournament!.id,
+          tournamentName: _tournament!.name,
+        ),
+      ),
+    );
+
+    // Reload permissions in case they changed
+    await _loadTournament();
   }
 
   Future<void> _removeTeamFromTournament(String teamId, String teamName) async {
@@ -1079,7 +1113,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           const SizedBox(height: 16),
 
           // Registrations section
-          if (_isCurrentUserOrganizer) _buildTeamsSection(),
+          if (_canManageTournament) _buildTeamsSection(),
         ],
       ),
     );
@@ -1200,6 +1234,21 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  // Manage Staff button - only for tournament owner
+                  if (_isCurrentUserOrganizer)
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _navigateToManageStaff,
+                        icon: const Icon(Icons.group),
+                        label: const Text('Manage Staff (Admins & Scorers)'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.indigo,
+                          side: const BorderSide(color: Colors.indigo),
+                        ),
+                      ),
+                    ),
+                  if (_isCurrentUserOrganizer) const SizedBox(height: 8),
                   Row(
                     children: [
                       if (_hasMatches)
