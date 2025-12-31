@@ -275,6 +275,11 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         status: newStatus,
       );
 
+      // If match is completed, advance winner to next bracket match
+      if (newStatus == MatchStatus.completed) {
+        await _matchService.advanceWinnerToBracket(widget.matchId);
+      }
+
       await _loadMatchData();
 
       if (mounted) {

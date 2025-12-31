@@ -279,6 +279,92 @@ class MatchService {
     return Match.fromJson(response);
   }
 
+  /// Retroactively advance all winners for completed bracket matches
+  /// Call this to fix brackets where winners weren't advanced
+  Future<int> advanceAllBracketWinners(String tournamentId) async {
+    int advancedCount = 0;
+
+    // Get all completed bracket matches
+    final completedMatches = await supabase
+        .from('matches')
+        .select()
+        .eq('tournament_id', tournamentId)
+        .eq('status', 'completed')
+        .not('tier', 'is', null)
+        .order('match_number', ascending: true);
+
+    for (final matchData in completedMatches as List) {
+      final match = Match.fromJson(matchData);
+      if (match.winnerId != null) {
+        await advanceWinnerToBracket(match.id);
+        advancedCount++;
+      }
+    }
+
+    return advancedCount;
+  }
+
+  /// Advance winner to next bracket match
+  /// Call this after a bracket match is completed
+  Future<void> advanceWinnerToBracket(String matchId) async {
+    // Get the completed match
+    final match = await getMatch(matchId);
+
+    // Only process bracket matches (tiered_league phase) with a winner
+    if (match.tier == null || match.winnerId == null) return;
+
+    // Get round info from the match
+    final round = match.round ?? '';
+    final tier = match.tier!;
+
+    // Determine the next round based on current round
+    String? nextRound;
+    if (round.contains('Quarter-Finals')) {
+      nextRound = '$tier - Semi-Finals';
+    } else if (round.contains('Semi-Finals')) {
+      nextRound = '$tier - Finals';
+    } else if (round.contains('Round of 16')) {
+      nextRound = '$tier - Quarter-Finals';
+    } else if (round.contains('Round of 32')) {
+      nextRound = '$tier - Round of 16';
+    } else {
+      // Finals or unknown round - no advancement needed
+      return;
+    }
+
+    // Find the next round match that needs this winner
+    // Get all matches in the next round for this tier
+    final nextRoundMatches = await supabase
+        .from('matches')
+        .select()
+        .eq('tournament_id', match.tournamentId)
+        .eq('tier', tier)
+        .eq('round', nextRound)
+        .order('match_number', ascending: true);
+
+    if ((nextRoundMatches as List).isEmpty) return;
+
+    // Find a match slot that needs a team
+    for (final nextMatchData in nextRoundMatches) {
+      final nextMatch = Match.fromJson(nextMatchData);
+
+      // Check if this match has an empty slot
+      if (nextMatch.team1Id == null) {
+        await supabase
+            .from('matches')
+            .update({'team1_id': match.winnerId})
+            .eq('id', nextMatch.id);
+        return;
+      } else if (nextMatch.team2Id == null) {
+        await supabase
+            .from('matches')
+            .update({'team2_id': match.winnerId})
+            .eq('id', nextMatch.id);
+        return;
+      }
+    }
+  }
+
   /// Check if a tournament has any matches generated
   Future<bool> hasTournamentMatches(String tournamentId) async {
     final response = await supabase
