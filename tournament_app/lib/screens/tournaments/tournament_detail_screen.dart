@@ -9,6 +9,7 @@ import '../../services/match_service.dart';
 import '../../services/round_robin_generator.dart';
 import '../matches/matches_screen.dart';
 import '../matches/standings_screen.dart';
+import '../matches/bracket_screen.dart';
 import 'edit_tournament_screen.dart';
 import 'add_teams_screen.dart';
 import 'manage_seeds_screen.dart';
@@ -363,6 +364,24 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         builder: (context) => StandingsScreen(
           tournamentId: widget.tournamentId,
           tournamentName: _tournament!.name,
+          isOrganizer: _isCurrentUserOrganizer,
+          scoringFormat: _scoringFormat,
+          venue: _tournament!.location,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _navigateToBrackets() async {
+    if (_tournament == null) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => BracketScreen(
+          tournamentId: widget.tournamentId,
+          tournamentName: _tournament!.name,
+          isOrganizer: _isCurrentUserOrganizer,
+          scoringFormat: _scoringFormat,
         ),
       ),
     );
@@ -1134,6 +1153,19 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.purple,
                           side: const BorderSide(color: Colors.purple),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _navigateToBrackets,
+                        icon: const Icon(Icons.account_tree),
+                        label: const Text('View Tier Brackets'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.teal,
+                          side: const BorderSide(color: Colors.teal),
                         ),
                       ),
                     ),

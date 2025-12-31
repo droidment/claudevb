@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../models/scoring_format.dart';
 import '../../services/match_service.dart';
+import '../../services/bracket_generator.dart';
+import 'bracket_screen.dart';
 
 class StandingsScreen extends StatefulWidget {
   final String tournamentId;
@@ -7,6 +10,9 @@ class StandingsScreen extends StatefulWidget {
   final int advancedTierSize;
   final int intermediateTierSize;
   final int recreationalTierSize;
+  final bool isOrganizer;
+  final ScoringFormat scoringFormat;
+  final String? venue;
 
   const StandingsScreen({
     super.key,
@@ -15,6 +21,9 @@ class StandingsScreen extends StatefulWidget {
     this.advancedTierSize = 4,
     this.intermediateTierSize = 8,
     this.recreationalTierSize = 4,
+    this.isOrganizer = false,
+    this.scoringFormat = ScoringFormat.singleSet,
+    this.venue,
   });
 
   @override
@@ -26,6 +35,7 @@ class _StandingsScreenState extends State<StandingsScreen>
   final MatchService _matchService = MatchService();
 
   bool _isLoading = true;
+  bool _hasBrackets = false;
   Map<String, List<TeamStanding>> _poolStandings = {};
   List<TeamStanding> _overallStandings = [];
   TournamentProgress? _progress;
@@ -58,11 +68,18 @@ class _StandingsScreenState extends State<StandingsScreen>
         widget.tournamentId,
       );
 
+      // Check if bracket matches already exist
+      final allMatches = await _matchService.getMatchesForTournament(
+        widget.tournamentId,
+      );
+      final hasBrackets = allMatches.any((m) => m.tier != null);
+
       if (mounted) {
         setState(() {
           _poolStandings = poolStandings;
           _overallStandings = overallStandings;
           _progress = progress;
+          _hasBrackets = hasBrackets;
           _isLoading = false;
         });
       }
@@ -77,6 +94,102 @@ class _StandingsScreenState extends State<StandingsScreen>
         );
       }
     }
+  }
+
+  Future<void> _generateBrackets() async {
+    // Show configuration dialog
+    final config = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => _GenerateBracketsDialog(
+        advancedTeams: widget.advancedTierSize,
+        intermediateTeams: widget.intermediateTierSize,
+        recreationalTeams: widget.recreationalTierSize,
+      ),
+    );
+
+    if (config == null) return;
+
+    try {
+      // Show loading
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Generating brackets...'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
+      // Generate bracket matches
+      final bracketMatches = BracketGenerator.generateTieredBrackets(
+        tournamentId: widget.tournamentId,
+        overallStandings: _overallStandings,
+        advancedTierSize: widget.advancedTierSize,
+        intermediateTierSize: widget.intermediateTierSize,
+        recreationalTierSize: widget.recreationalTierSize,
+        startTime: config['startTime'] as DateTime,
+        matchDurationMinutes: config['matchDuration'] as int,
+        numberOfCourts: config['numberOfCourts'] as int,
+        venue: widget.venue,
+      );
+
+      // Insert matches
+      await _matchService.createMatches(bracketMatches);
+
+      // Close loading
+      if (mounted) Navigator.of(context).pop();
+
+      // Reload data
+      await _loadData();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${bracketMatches.length} bracket matches generated!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to brackets screen
+        _navigateToBrackets();
+      }
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error generating brackets: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _navigateToBrackets() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => BracketScreen(
+          tournamentId: widget.tournamentId,
+          tournamentName: widget.tournamentName,
+          isOrganizer: widget.isOrganizer,
+          scoringFormat: widget.scoringFormat,
+        ),
+      ),
+    );
   }
 
   @override
@@ -427,7 +540,7 @@ class _StandingsScreenState extends State<StandingsScreen>
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Progress indicator
+          // Progress indicator or bracket actions
           if (_progress != null && !_progress!.isPoolPlayComplete)
             Card(
               color: Colors.amber.shade50,
@@ -448,7 +561,63 @@ class _StandingsScreenState extends State<StandingsScreen>
                 ),
               ),
             ),
-          if (_progress != null && !_progress!.isPoolPlayComplete)
+          if (_progress != null && _progress!.isPoolPlayComplete)
+            Card(
+              color: _hasBrackets ? Colors.green.shade50 : Colors.blue.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          _hasBrackets ? Icons.check_circle : Icons.emoji_events,
+                          color: _hasBrackets ? Colors.green : Colors.blue,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _hasBrackets
+                                ? 'Tier brackets have been generated!'
+                                : 'Pool play complete! Ready to generate tier brackets.',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: _hasBrackets
+                                  ? Colors.green.shade900
+                                  : Colors.blue.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        if (!_hasBrackets && widget.isOrganizer)
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: _generateBrackets,
+                              icon: const Icon(Icons.account_tree),
+                              label: const Text('Generate Brackets'),
+                            ),
+                          ),
+                        if (_hasBrackets) ...[
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: _navigateToBrackets,
+                              icon: const Icon(Icons.account_tree),
+                              label: const Text('View Brackets'),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (_progress != null)
             const SizedBox(height: 16),
 
           // Tier Cards
@@ -655,5 +824,243 @@ class _StandingsScreenState extends State<StandingsScreen>
       default:
         return Colors.blueGrey;
     }
+  }
+}
+
+/// Dialog for configuring bracket generation
+class _GenerateBracketsDialog extends StatefulWidget {
+  final int advancedTeams;
+  final int intermediateTeams;
+  final int recreationalTeams;
+
+  const _GenerateBracketsDialog({
+    required this.advancedTeams,
+    required this.intermediateTeams,
+    required this.recreationalTeams,
+  });
+
+  @override
+  State<_GenerateBracketsDialog> createState() => _GenerateBracketsDialogState();
+}
+
+class _GenerateBracketsDialogState extends State<_GenerateBracketsDialog> {
+  DateTime _startTime = DateTime.now().add(const Duration(hours: 1));
+  int _matchDuration = 45;
+  int _numberOfCourts = 2;
+
+  int _getBracketSize(int teamCount) {
+    if (teamCount <= 2) return 2;
+    if (teamCount <= 4) return 4;
+    if (teamCount <= 8) return 8;
+    if (teamCount <= 16) return 16;
+    return 32;
+  }
+
+  String _getRoundInfo(int teamCount) {
+    final size = _getBracketSize(teamCount);
+    if (size == 2) return 'Finals only';
+    if (size == 4) return 'Semi-Finals → Finals';
+    if (size == 8) return 'Quarter-Finals → Semi-Finals → Finals';
+    return 'Multiple rounds';
+  }
+
+  int _getTotalMatches() {
+    int total = 0;
+    if (widget.advancedTeams > 1) {
+      total += _getBracketSize(widget.advancedTeams) - 1;
+    }
+    if (widget.intermediateTeams > 1) {
+      total += _getBracketSize(widget.intermediateTeams) - 1;
+    }
+    if (widget.recreationalTeams > 1) {
+      total += _getBracketSize(widget.recreationalTeams) - 1;
+    }
+    return total;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Generate Tier Brackets'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Tier summary
+            Card(
+              color: Colors.blue.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Bracket Summary',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildTierInfo(
+                      'Advanced',
+                      widget.advancedTeams,
+                      Colors.green,
+                    ),
+                    _buildTierInfo(
+                      'Intermediate',
+                      widget.intermediateTeams,
+                      Colors.blue,
+                    ),
+                    _buildTierInfo(
+                      'Recreational',
+                      widget.recreationalTeams,
+                      Colors.orange,
+                    ),
+                    const Divider(),
+                    Text(
+                      'Total matches: ${_getTotalMatches()}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Start time
+            const Text(
+              'Start Time',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: _startTime,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (date != null && mounted) {
+                  final time = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.fromDateTime(_startTime),
+                  );
+                  if (time != null) {
+                    setState(() {
+                      _startTime = DateTime(
+                        date.year,
+                        date.month,
+                        date.day,
+                        time.hour,
+                        time.minute,
+                      );
+                    });
+                  }
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${_startTime.month}/${_startTime.day}/${_startTime.year} '
+                      'at ${_startTime.hour}:${_startTime.minute.toString().padLeft(2, '0')}',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Match duration
+            const Text(
+              'Match Duration (minutes)',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            Slider(
+              value: _matchDuration.toDouble(),
+              min: 20,
+              max: 90,
+              divisions: 14,
+              label: '$_matchDuration min',
+              onChanged: (value) {
+                setState(() => _matchDuration = value.round());
+              },
+            ),
+            const SizedBox(height: 8),
+
+            // Number of courts
+            const Text(
+              'Number of Courts',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            Slider(
+              value: _numberOfCourts.toDouble(),
+              min: 1,
+              max: 8,
+              divisions: 7,
+              label: '$_numberOfCourts courts',
+              onChanged: (value) {
+                setState(() => _numberOfCourts = value.round());
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton.icon(
+          onPressed: () {
+            Navigator.of(context).pop({
+              'startTime': _startTime,
+              'matchDuration': _matchDuration,
+              'numberOfCourts': _numberOfCourts,
+            });
+          },
+          icon: const Icon(Icons.account_tree),
+          label: const Text('Generate Brackets'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTierInfo(String tierName, int teamCount, Color color) {
+    if (teamCount <= 0) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text('$tierName: $teamCount teams'),
+          ),
+          Text(
+            _getRoundInfo(teamCount),
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
