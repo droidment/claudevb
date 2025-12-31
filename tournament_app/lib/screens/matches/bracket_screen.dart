@@ -125,6 +125,12 @@ class _BracketScreenState extends State<BracketScreen>
               )
             : null,
         actions: [
+          if (widget.isOrganizer)
+            IconButton(
+              icon: const Icon(Icons.sync),
+              onPressed: _advanceAllWinners,
+              tooltip: 'Advance Winners',
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadBracketMatches,
@@ -403,6 +409,55 @@ class _BracketScreenState extends State<BracketScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _advanceAllWinners() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Advance Winners'),
+        content: const Text(
+          'This will advance all winners from completed bracket matches to their next round matches. Continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Advance'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final advancedCount = await _matchService.advanceAllBracketWinners(
+        widget.tournamentId,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Advanced winners from $advancedCount matches'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _loadBracketMatches();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error advancing winners: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _navigateToMatchDetail(Map<String, dynamic> matchData) async {
