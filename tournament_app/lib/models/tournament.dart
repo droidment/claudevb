@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
 import 'league_config.dart';
+import 'scoring_config.dart';
 
 class Tournament {
   final String id;
@@ -26,6 +27,7 @@ class Tournament {
   final String? inviteCode; // Unique code for private tournaments
   final double? latitude; // Geo-location latitude
   final double? longitude; // Geo-location longitude
+  final TournamentScoringConfig? scoringConfig; // Phase-based scoring configuration
 
   Tournament({
     required this.id,
@@ -51,7 +53,16 @@ class Tournament {
     this.inviteCode,
     this.latitude,
     this.longitude,
+    this.scoringConfig,
   });
+
+  /// Get scoring config, with fallback to default based on sport type
+  TournamentScoringConfig get effectiveScoringConfig {
+    if (scoringConfig != null) return scoringConfig!;
+    return sportType == 'pickleball'
+        ? TournamentScoringConfig.pickleballDefault()
+        : TournamentScoringConfig.volleyballDefault();
+  }
 
   factory Tournament.fromJson(Map<String, dynamic> json) {
     return Tournament(
@@ -98,6 +109,13 @@ class Tournament {
       longitude: json['longitude'] != null
           ? double.parse(json['longitude'].toString())
           : null,
+      scoringConfig: json['scoring_config'] != null
+          ? TournamentScoringConfig.fromJson(
+              json['scoring_config'] is String
+                  ? jsonDecode(json['scoring_config'] as String)
+                  : json['scoring_config'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 
@@ -126,6 +144,7 @@ class Tournament {
       'invite_code': inviteCode,
       'latitude': latitude,
       'longitude': longitude,
+      'scoring_config': scoringConfig?.toJson(),
     };
   }
 
@@ -153,6 +172,9 @@ class Tournament {
       'invite_code': inviteCode,
       'latitude': latitude,
       'longitude': longitude,
+      'scoring_config': scoringConfig != null
+          ? jsonEncode(scoringConfig!.toJson())
+          : null,
     };
   }
 

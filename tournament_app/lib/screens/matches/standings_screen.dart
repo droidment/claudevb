@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/scoring_format.dart';
+import '../../models/scoring_config.dart';
 import '../../services/match_service.dart';
 import '../../services/bracket_generator.dart';
 import 'bracket_screen.dart';
@@ -13,6 +14,7 @@ class StandingsScreen extends StatefulWidget {
   final bool isOrganizer;
   final ScoringFormat scoringFormat;
   final String? venue;
+  final TournamentScoringConfig? tournamentScoringConfig;
 
   const StandingsScreen({
     super.key,
@@ -24,6 +26,7 @@ class StandingsScreen extends StatefulWidget {
     this.isOrganizer = false,
     this.scoringFormat = ScoringFormat.singleSet,
     this.venue,
+    this.tournamentScoringConfig,
   });
 
   @override
@@ -187,6 +190,7 @@ class _StandingsScreenState extends State<StandingsScreen>
           tournamentName: widget.tournamentName,
           isOrganizer: widget.isOrganizer,
           scoringFormat: widget.scoringFormat,
+          tournamentScoringConfig: widget.tournamentScoringConfig,
         ),
       ),
     );
