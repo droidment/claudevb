@@ -2,18 +2,21 @@ import 'package:flutter/material.dart';
 import '../../models/match.dart';
 import '../../models/match_set.dart';
 import '../../models/scoring_format.dart';
+import '../../models/scoring_config.dart';
 import '../../services/match_service.dart';
 
 class MatchDetailScreen extends StatefulWidget {
   final String matchId;
   final bool isOrganizer;
-  final ScoringFormat scoringFormat;
+  final ScoringFormat scoringFormat; // Legacy - for backward compatibility
+  final TournamentScoringConfig? tournamentScoringConfig; // New phase-based config
 
   const MatchDetailScreen({
     super.key,
     required this.matchId,
     this.isOrganizer = false,
     this.scoringFormat = ScoringFormat.singleSet,
+    this.tournamentScoringConfig,
   });
 
   @override
@@ -28,6 +31,27 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   String? _team2Name;
   bool _isLoading = true;
   String? _error;
+
+  /// Get the effective scoring for this match based on its round/phase
+  PhaseScoring get _effectiveScoring {
+    if (widget.tournamentScoringConfig != null && _match != null) {
+      return widget.tournamentScoringConfig!.getScoringForRound(_match!.round);
+    }
+    // Fallback to legacy scoring format
+    return _convertLegacyScoringFormat(widget.scoringFormat);
+  }
+
+  /// Convert legacy ScoringFormat to PhaseScoring for backward compatibility
+  PhaseScoring _convertLegacyScoringFormat(ScoringFormat format) {
+    switch (format) {
+      case ScoringFormat.singleSet:
+        return const PhaseScoring(numberOfSets: 1, pointsPerSet: 25);
+      case ScoringFormat.bestOfThree:
+        return const PhaseScoring(numberOfSets: 3, pointsPerSet: 21, tiebreakPoints: 15);
+      case ScoringFormat.bestOfThreeFull:
+        return const PhaseScoring(numberOfSets: 3, pointsPerSet: 25);
+    }
+  }
 
   @override
   void initState() {
@@ -66,8 +90,10 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   Future<void> _addSet() async {
     if (_match == null) return;
 
+    final scoring = _effectiveScoring;
+
     // Check if match is already complete based on scoring format
-    final setsToWin = widget.scoringFormat.setsToWin;
+    final setsToWin = scoring.setsToWin;
     final team1SetsWon = _match!.team1SetsWon;
     final team2SetsWon = _match!.team2SetsWon;
 
@@ -76,7 +102,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Match is already complete (${widget.scoringFormat.displayName})',
+              'Match is already complete (${scoring.displayName})',
             ),
             backgroundColor: Colors.orange,
           ),
@@ -86,12 +112,12 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     }
 
     // Check if max sets reached
-    if (_sets.length >= widget.scoringFormat.maxSets) {
+    if (_sets.length >= scoring.numberOfSets) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Maximum sets reached (${widget.scoringFormat.maxSets})',
+              'Maximum sets reached (${scoring.numberOfSets})',
             ),
             backgroundColor: Colors.orange,
           ),
@@ -101,7 +127,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     }
 
     final setNumber = _sets.length + 1;
-    final targetScore = widget.scoringFormat.targetScoreForSet(setNumber);
+    final targetScore = scoring.targetScoreForSet(setNumber);
 
     final result = await showDialog<Map<String, int>>(
       context: context,
@@ -110,7 +136,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         team1Name: _team1Name!,
         team2Name: _team2Name!,
         targetScore: targetScore,
-        scoringFormat: widget.scoringFormat,
+        phaseScoring: scoring,
       ),
     );
 
@@ -153,7 +179,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   Future<void> _editSet(MatchSet set) async {
-    final targetScore = widget.scoringFormat.targetScoreForSet(set.setNumber);
+    final scoring = _effectiveScoring;
+    final targetScore = scoring.targetScoreForSet(set.setNumber);
 
     final result = await showDialog<Map<String, int>>(
       context: context,
@@ -164,7 +191,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         initialTeam1Score: set.team1Score,
         initialTeam2Score: set.team2Score,
         targetScore: targetScore,
-        scoringFormat: widget.scoringFormat,
+        phaseScoring: scoring,
       ),
     );
 
@@ -255,8 +282,9 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   void _checkAndCompleteMatch() {
     if (_match == null) return;
 
-    // Use scoring format to determine when match is complete
-    final setsToWin = widget.scoringFormat.setsToWin;
+    // Use phase-specific scoring to determine when match is complete
+    final scoring = _effectiveScoring;
+    final setsToWin = scoring.setsToWin;
     final team1SetsWon = _sets.where((s) => s.winningTeam == 1).length;
     final team2SetsWon = _sets.where((s) => s.winningTeam == 2).length;
 
@@ -758,7 +786,7 @@ class _AddSetDialog extends StatefulWidget {
   final int? initialTeam1Score;
   final int? initialTeam2Score;
   final int targetScore;
-  final ScoringFormat scoringFormat;
+  final PhaseScoring phaseScoring;
 
   const _AddSetDialog({
     required this.setNumber,
@@ -767,7 +795,7 @@ class _AddSetDialog extends StatefulWidget {
     this.initialTeam1Score,
     this.initialTeam2Score,
     this.targetScore = 25,
-    this.scoringFormat = ScoringFormat.singleSet,
+    required this.phaseScoring,
   });
 
   @override
@@ -797,17 +825,19 @@ class _AddSetDialogState extends State<_AddSetDialog> {
   }
 
   String _getSetInfo() {
-    switch (widget.scoringFormat) {
-      case ScoringFormat.singleSet:
-        return 'Play to ${widget.targetScore} (win by 2)';
-      case ScoringFormat.bestOfThree:
-        if (widget.setNumber <= 2) {
-          return 'Set ${widget.setNumber} of 3 • Play to 21 (win by 2)';
-        } else {
-          return 'Set 3 (Tiebreaker) • Play to 15 (win by 2)';
-        }
-      case ScoringFormat.bestOfThreeFull:
-        return 'Set ${widget.setNumber} of 3 • Play to 25 (win by 2)';
+    final scoring = widget.phaseScoring;
+    final targetScore = scoring.targetScoreForSet(widget.setNumber);
+
+    if (scoring.numberOfSets == 1) {
+      return 'Play to $targetScore (win by 2)';
+    } else {
+      final isTiebreaker = widget.setNumber == 3 &&
+          scoring.tiebreakPoints != null &&
+          scoring.tiebreakPoints != scoring.pointsPerSet;
+      if (isTiebreaker) {
+        return 'Set 3 (Tiebreaker) • Play to $targetScore (win by 2)';
+      }
+      return 'Set ${widget.setNumber} of ${scoring.numberOfSets} • Play to $targetScore (win by 2)';
     }
   }
 
@@ -897,8 +927,8 @@ class _AddSetDialogState extends State<_AddSetDialog> {
               return;
             }
 
-            // Validate the score based on scoring format
-            if (!widget.scoringFormat.isValidSetScore(
+            // Validate the score based on phase scoring
+            if (!widget.phaseScoring.isValidSetScore(
               widget.setNumber,
               team1Score,
               team2Score,

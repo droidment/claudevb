@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/match.dart';
 import '../../models/scoring_format.dart';
+import '../../models/scoring_config.dart';
 import '../../services/match_service.dart';
 import 'match_detail_screen.dart';
 import 'tournament_results_screen.dart';
@@ -10,6 +11,7 @@ class BracketScreen extends StatefulWidget {
   final String tournamentName;
   final bool isOrganizer;
   final ScoringFormat scoringFormat;
+  final TournamentScoringConfig? tournamentScoringConfig;
 
   const BracketScreen({
     super.key,
@@ -17,6 +19,7 @@ class BracketScreen extends StatefulWidget {
     required this.tournamentName,
     this.isOrganizer = false,
     this.scoringFormat = ScoringFormat.singleSet,
+    this.tournamentScoringConfig,
   });
 
   @override
@@ -487,6 +490,7 @@ class _BracketScreenState extends State<BracketScreen>
           matchId: match.id,
           isOrganizer: widget.isOrganizer,
           scoringFormat: widget.scoringFormat,
+          tournamentScoringConfig: widget.tournamentScoringConfig,
         ),
       ),
     );

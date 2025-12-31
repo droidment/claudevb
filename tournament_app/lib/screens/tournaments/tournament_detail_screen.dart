@@ -15,6 +15,8 @@ import 'edit_tournament_screen.dart';
 import 'add_teams_screen.dart';
 import 'manage_seeds_screen.dart';
 import 'manage_lunches_screen.dart';
+import 'scoring_config_screen.dart';
+import '../../models/scoring_config.dart';
 
 class TournamentDetailScreen extends StatefulWidget {
   final String tournamentId;
@@ -349,6 +351,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           tournamentName: _tournament!.name,
           isOrganizer: _isCurrentUserOrganizer,
           scoringFormat: _scoringFormat,
+          tournamentScoringConfig: _tournament!.scoringConfig,
         ),
       ),
     );
@@ -368,6 +371,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           isOrganizer: _isCurrentUserOrganizer,
           scoringFormat: _scoringFormat,
           venue: _tournament!.location,
+          tournamentScoringConfig: _tournament!.scoringConfig,
         ),
       ),
     );
@@ -383,6 +387,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           tournamentName: _tournament!.name,
           isOrganizer: _isCurrentUserOrganizer,
           scoringFormat: _scoringFormat,
+          tournamentScoringConfig: _tournament!.scoringConfig,
         ),
       ),
     );
@@ -466,6 +471,46 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
 
     // Refresh teams after returning from manage lunches
     await _loadRegisteredTeams();
+  }
+
+  Future<void> _navigateToScoringConfig() async {
+    if (_tournament == null) return;
+
+    final newConfig = await Navigator.of(context).push<TournamentScoringConfig>(
+      MaterialPageRoute(
+        builder: (context) => ScoringConfigScreen(
+          sportType: _tournament!.sportType,
+          initialConfig: _tournament!.scoringConfig,
+        ),
+      ),
+    );
+
+    if (newConfig != null) {
+      try {
+        await _tournamentService.updateTournament(
+          _tournament!.id,
+          {'scoring_config': newConfig.toJsonString()},
+        );
+        await _loadTournament();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Scoring configuration saved'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error saving scoring config: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _removeTeamFromTournament(String teamId, String teamName) async {
@@ -1137,10 +1182,26 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                         child: OutlinedButton.icon(
                           onPressed: _navigateToManageLunches,
                           icon: const Icon(Icons.restaurant_menu),
-                          label: const Text('Manage Lunches'),
+                          label: const Text('Lunches'),
                         ),
                       ),
                       const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _navigateToScoringConfig,
+                          icon: const Icon(Icons.scoreboard),
+                          label: const Text('Scoring'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.deepPurple,
+                            side: const BorderSide(color: Colors.deepPurple),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
                       if (_hasMatches)
                         Expanded(
                           child: FilledButton.icon(
