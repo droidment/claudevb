@@ -3,6 +3,7 @@ import '../../models/match.dart';
 import '../../models/scoring_format.dart';
 import '../../services/match_service.dart';
 import 'match_detail_screen.dart';
+import 'tournament_results_screen.dart';
 
 class BracketScreen extends StatefulWidget {
   final String tournamentId;
@@ -125,6 +126,11 @@ class _BracketScreenState extends State<BracketScreen>
               )
             : null,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.emoji_events),
+            onPressed: _navigateToResults,
+            tooltip: 'View Results',
+          ),
           if (widget.isOrganizer)
             IconButton(
               icon: const Icon(Icons.sync),
@@ -407,6 +413,18 @@ class _BracketScreenState extends State<BracketScreen>
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  void _navigateToResults() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TournamentResultsScreen(
+          tournamentId: widget.tournamentId,
+          tournamentName: widget.tournamentName,
+          isOrganizer: widget.isOrganizer,
+        ),
       ),
     );
   }

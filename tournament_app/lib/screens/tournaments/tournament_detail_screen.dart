@@ -10,6 +10,7 @@ import '../../services/round_robin_generator.dart';
 import '../matches/matches_screen.dart';
 import '../matches/standings_screen.dart';
 import '../matches/bracket_screen.dart';
+import '../matches/tournament_results_screen.dart';
 import 'edit_tournament_screen.dart';
 import 'add_teams_screen.dart';
 import 'manage_seeds_screen.dart';
@@ -385,6 +386,23 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _navigateToResults() async {
+    if (_tournament == null) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TournamentResultsScreen(
+          tournamentId: widget.tournamentId,
+          tournamentName: _tournament!.name,
+          isOrganizer: _isCurrentUserOrganizer,
+        ),
+      ),
+    );
+
+    // Refresh tournament data when returning (in case tournament was closed)
+    await _loadTournament();
   }
 
   Future<void> _editTournament() async {
@@ -1157,17 +1175,32 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: _navigateToBrackets,
-                        icon: const Icon(Icons.account_tree),
-                        label: const Text('View Tier Brackets'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.teal,
-                          side: const BorderSide(color: Colors.teal),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _navigateToBrackets,
+                            icon: const Icon(Icons.account_tree),
+                            label: const Text('Brackets'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.teal,
+                              side: const BorderSide(color: Colors.teal),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _navigateToResults,
+                            icon: const Icon(Icons.emoji_events),
+                            label: const Text('Results'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.amber.shade700,
+                              side: BorderSide(color: Colors.amber.shade700),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                   const SizedBox(height: 12),
