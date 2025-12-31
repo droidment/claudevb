@@ -38,8 +38,9 @@ CREATE POLICY "Allow viewing tournament staff"
     OR tournament_staff.user_id = auth.uid()
   );
 
--- Policy: Tournament organizer or admins can manage staff
-CREATE POLICY "Allow organizers and admins to manage staff"
+-- Policy: Only tournament organizer can INSERT staff
+-- Note: We don't allow admins to add other staff to avoid infinite recursion in RLS
+CREATE POLICY "Allow organizers to insert staff"
   ON tournament_staff FOR INSERT
   TO authenticated
   WITH CHECK (
@@ -48,16 +49,10 @@ CREATE POLICY "Allow organizers and admins to manage staff"
       WHERE tournaments.id = tournament_staff.tournament_id
       AND tournaments.organizer_id = auth.uid()
     )
-    OR EXISTS (
-      SELECT 1 FROM tournament_staff ts
-      WHERE ts.tournament_id = tournament_staff.tournament_id
-      AND ts.user_id = auth.uid()
-      AND ts.role = 'admin'
-    )
   );
 
--- Policy: Tournament organizer or admins can update staff
-CREATE POLICY "Allow organizers and admins to update staff"
+-- Policy: Only tournament organizer can UPDATE staff
+CREATE POLICY "Allow organizers to update staff"
   ON tournament_staff FOR UPDATE
   TO authenticated
   USING (
@@ -66,16 +61,10 @@ CREATE POLICY "Allow organizers and admins to update staff"
       WHERE tournaments.id = tournament_staff.tournament_id
       AND tournaments.organizer_id = auth.uid()
     )
-    OR EXISTS (
-      SELECT 1 FROM tournament_staff ts
-      WHERE ts.tournament_id = tournament_staff.tournament_id
-      AND ts.user_id = auth.uid()
-      AND ts.role = 'admin'
-    )
   );
 
--- Policy: Tournament organizer or admins can delete staff (but not themselves if admin)
-CREATE POLICY "Allow organizers and admins to delete staff"
+-- Policy: Only tournament organizer can DELETE staff
+CREATE POLICY "Allow organizers to delete staff"
   ON tournament_staff FOR DELETE
   TO authenticated
   USING (
@@ -83,15 +72,6 @@ CREATE POLICY "Allow organizers and admins to delete staff"
       SELECT 1 FROM tournaments
       WHERE tournaments.id = tournament_staff.tournament_id
       AND tournaments.organizer_id = auth.uid()
-    )
-    OR (
-      EXISTS (
-        SELECT 1 FROM tournament_staff ts
-        WHERE ts.tournament_id = tournament_staff.tournament_id
-        AND ts.user_id = auth.uid()
-        AND ts.role = 'admin'
-      )
-      AND tournament_staff.user_id != auth.uid()
     )
   );
 

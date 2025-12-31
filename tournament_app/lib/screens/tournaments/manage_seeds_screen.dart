@@ -26,11 +26,50 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
   final Map<String, int?> _seedChanges = {};
   // Track pool changes: teamId -> poolAssignment
   final Map<String, String?> _poolChanges = {};
+  // Text controllers for inline seed editing: teamId -> controller
+  final Map<String, TextEditingController> _seedControllers = {};
 
   @override
   void initState() {
     super.initState();
     _loadTeams();
+  }
+
+  @override
+  void dispose() {
+    // Dispose all text controllers
+    for (final controller in _seedControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  /// Get or create a text controller for a team's seed
+  TextEditingController _getControllerForTeam(String teamId, int? seedNumber) {
+    if (!_seedControllers.containsKey(teamId)) {
+      _seedControllers[teamId] = TextEditingController(
+        text: seedNumber?.toString() ?? '',
+      );
+    }
+    return _seedControllers[teamId]!;
+  }
+
+  /// Update seed from inline text field
+  void _updateSeedFromController(String teamId, String value) {
+    final newSeed = value.isEmpty ? null : int.tryParse(value);
+
+    setState(() {
+      _seedChanges[teamId] = newSeed;
+
+      // Update local state
+      for (final team in _teams) {
+        final data = team['teams'] as Map<String, dynamic>?;
+        if (data != null && data['id'] == teamId) {
+          team['seed_number'] = newSeed;
+          break;
+        }
+      }
+    });
   }
 
   Future<void> _loadTeams() async {
@@ -584,7 +623,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Drag teams to reorder, or tap to edit seed number. Lower seed = stronger team.',
+                  'Enter seed numbers directly in the boxes. Drag teams to reorder. Lower seed = stronger team.',
                   style: TextStyle(color: Colors.blue.shade700),
                 ),
               ),
@@ -640,181 +679,157 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
     final hasPoolChange = _poolChanges.containsKey(teamId);
     final hasChange = hasSeedChange || hasPoolChange;
 
+    // Get or create controller for this team
+    final controller = _getControllerForTeam(teamId, seedNumber);
+
     return Card(
       key: ValueKey(teamId),
       margin: const EdgeInsets.only(bottom: 8),
       color: hasChange ? Colors.yellow.shade50 : null,
-      child: ListTile(
-        leading: Row(
-          mainAxisSize: MainAxisSize.min,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Row(
           children: [
             // Drag handle
             ReorderableDragStartListener(
               index: index,
-              child: const Icon(Icons.drag_handle, color: Colors.grey),
-            ),
-            const SizedBox(width: 8),
-            // Seed badge
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: seedNumber != null
-                    ? Colors.amber.shade100
-                    : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(8),
-                border: seedNumber != null
-                    ? Border.all(color: Colors.amber.shade400, width: 2)
-                    : null,
-              ),
-              child: Center(
-                child: Text(
-                  seedNumber?.toString() ?? '-',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: seedNumber != null
-                        ? Colors.amber.shade800
-                        : Colors.grey,
-                  ),
-                ),
+              child: const Padding(
+                padding: EdgeInsets.all(8),
+                child: Icon(Icons.drag_handle, color: Colors.grey),
               ),
             ),
-          ],
-        ),
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: avatarColor.withOpacity(0.2),
-              child: Text(
-                teamName.substring(0, 1).toUpperCase(),
+            // Inline seed input
+            SizedBox(
+              width: 50,
+              height: 40,
+              child: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: avatarColor,
+                  fontSize: 16,
+                  color: Colors.amber.shade800,
                 ),
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  filled: true,
+                  fillColor: seedNumber != null
+                      ? Colors.amber.shade100
+                      : Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.amber.shade400),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: seedNumber != null
+                          ? Colors.amber.shade400
+                          : Colors.grey.shade300,
+                      width: seedNumber != null ? 2 : 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.amber.shade600, width: 2),
+                  ),
+                  hintText: '-',
+                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                ),
+                onChanged: (value) => _updateSeedFromController(teamId, value),
               ),
             ),
-            const SizedBox(width: 8),
-            Expanded(child: Text(teamName)),
-            if (isPaid)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'PAID',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
+            const SizedBox(width: 12),
+            // Team info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: avatarColor.withValues(alpha: 0.2),
+                        child: Text(
+                          teamName.substring(0, 1).toUpperCase(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: avatarColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          teamName,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isPaid)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'PAID',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                ),
+                  if (poolAssignment != null || homeCity != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        children: [
+                          if (poolAssignment != null) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade100,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: Colors.blue.shade300),
+                              ),
+                              child: Text(
+                                'Pool $poolAssignment',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue.shade700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          if (homeCity != null) ...[
+                            Icon(Icons.location_on, size: 12, color: Colors.grey[500]),
+                            const SizedBox(width: 2),
+                            Expanded(
+                              child: Text(
+                                homeCity,
+                                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                ],
               ),
+            ),
           ],
         ),
-        subtitle: Row(
-          children: [
-            if (poolAssignment != null) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade100,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.blue.shade300),
-                ),
-                child: Text(
-                  'Pool $poolAssignment',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade700,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
-            if (homeCity != null) ...[
-              Icon(Icons.location_on, size: 12, color: Colors.grey[500]),
-              const SizedBox(width: 2),
-              Expanded(
-                child: Text(
-                  homeCity,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.edit),
-          onPressed: () => _editSeed(teamId, teamName, seedNumber),
-        ),
-        onTap: () => _editSeed(teamId, teamName, seedNumber),
       ),
     );
-  }
-
-  Future<void> _editSeed(
-    String teamId,
-    String teamName,
-    int? currentSeed,
-  ) async {
-    final controller = TextEditingController(
-      text: currentSeed?.toString() ?? '',
-    );
-
-    final result = await showDialog<int?>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Seed for $teamName'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Seed Number',
-            hintText: 'e.g., 1, 2, 3',
-            helperText: 'Leave empty to remove seed',
-            border: OutlineInputBorder(),
-          ),
-          keyboardType: TextInputType.number,
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final seed = int.tryParse(controller.text);
-              Navigator.pop(context, seed ?? -1); // -1 means clear
-            },
-            child: const Text('Set'),
-          ),
-        ],
-      ),
-    );
-
-    controller.dispose();
-
-    if (result != null) {
-      setState(() {
-        final newSeed = result == -1 ? null : result;
-        _seedChanges[teamId] = newSeed;
-
-        // Update local state
-        for (final team in _teams) {
-          final data = team['teams'] as Map<String, dynamic>?;
-          if (data != null && data['id'] == teamId) {
-            team['seed_number'] = newSeed;
-            break;
-          }
-        }
-      });
-    }
   }
 }
