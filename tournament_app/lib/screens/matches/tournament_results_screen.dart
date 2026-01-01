@@ -403,39 +403,63 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
     required Color iconColor,
     required Color backgroundColor,
     bool showPlacement = true,
+    String? teamColor,
   }) {
+    // Parse team color or use a default based on placement
+    Color avatarColor;
+    if (teamColor != null) {
+      try {
+        avatarColor = Color(int.parse(teamColor.replaceFirst('#', '0xFF')));
+      } catch (_) {
+        avatarColor = _getPlacementAvatarColor(placement);
+      }
+    } else {
+      avatarColor = _getPlacementAvatarColor(placement);
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
+          // Placement number badge
           if (showPlacement)
             Container(
-              width: 28,
-              height: 28,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 color: iconColor.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: iconColor.withValues(alpha: 0.5),
+                  width: 2,
+                ),
               ),
               child: Center(
                 child: Text(
                   '$placement',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
+                    fontSize: 14,
                     color: iconColor,
                   ),
                 ),
               ),
             )
           else
-            const SizedBox(width: 28),
+            const SizedBox(width: 32),
           const SizedBox(width: 12),
-          Icon(icon, color: iconColor, size: 24),
+          // Team trophy/medal icon
+          Icon(icon, color: iconColor, size: 22),
           const SizedBox(width: 12),
+          // Team avatar
+          _buildTeamAvatar(teamName, avatarColor),
+          const SizedBox(width: 12),
+          // Team name
           Expanded(
             child: Text(
               teamName,
@@ -448,6 +472,47 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
         ],
       ),
     );
+  }
+
+  /// Build a circular team avatar with the team's initial
+  Widget _buildTeamAvatar(String teamName, Color color) {
+    final initial = teamName.isNotEmpty ? teamName[0].toUpperCase() : '?';
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.2),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: color,
+          width: 2,
+        ),
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: color,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Get avatar color based on placement
+  Color _getPlacementAvatarColor(int placement) {
+    switch (placement) {
+      case 1:
+        return Colors.amber.shade700;
+      case 2:
+        return Colors.blueGrey.shade600;
+      case 3:
+        return Colors.brown.shade600;
+      default:
+        return Colors.blue;
+    }
   }
 
   Widget _buildMatchSummary(TierResult result) {
@@ -510,9 +575,29 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
 
     final team1Name = team1?['name'] as String? ?? 'TBD';
     final team2Name = team2?['name'] as String? ?? 'TBD';
+    final team1Color = team1?['team_color'] as String?;
+    final team2Color = team2?['team_color'] as String?;
 
     final team1Won = match.winnerId == match.team1Id;
     final team2Won = match.winnerId == match.team2Id;
+
+    // Parse team colors
+    Color team1AvatarColor;
+    Color team2AvatarColor;
+    try {
+      team1AvatarColor = team1Color != null
+          ? Color(int.parse(team1Color.replaceFirst('#', '0xFF')))
+          : Colors.blue;
+    } catch (_) {
+      team1AvatarColor = Colors.blue;
+    }
+    try {
+      team2AvatarColor = team2Color != null
+          ? Color(int.parse(team2Color.replaceFirst('#', '0xFF')))
+          : Colors.red;
+    } catch (_) {
+      team2AvatarColor = Colors.red;
+    }
 
     return Column(
       children: [
@@ -523,59 +608,155 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
             color: Colors.grey[700],
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey.shade300),
           ),
           child: Row(
             children: [
+              // Team 1
               Expanded(
                 child: Column(
                   children: [
+                    // Team avatar with winner indicator
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: team1AvatarColor.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: team1Won ? Colors.amber : team1AvatarColor,
+                              width: team1Won ? 3 : 2,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              team1Name.isNotEmpty ? team1Name[0].toUpperCase() : '?',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 24,
+                                color: team1AvatarColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (team1Won)
+                          Positioned(
+                            top: -8,
+                            left: 0,
+                            right: 0,
+                            child: Center(
+                              child: Icon(
+                                Icons.emoji_events,
+                                color: Colors.amber.shade700,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     Text(
                       team1Name,
                       style: TextStyle(
                         fontWeight: team1Won ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 14,
                         color: team1Won ? Colors.green.shade700 : null,
                       ),
                       textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    if (team1Won)
-                      const Icon(Icons.emoji_events, color: Colors.amber, size: 16),
                   ],
                 ),
               ),
+              // Score
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Text(
                   '${match.team1SetsWon} - ${match.team2SetsWon}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: 22,
                   ),
                 ),
               ),
+              // Team 2
               Expanded(
                 child: Column(
                   children: [
+                    // Team avatar with winner indicator
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: team2AvatarColor.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: team2Won ? Colors.amber : team2AvatarColor,
+                              width: team2Won ? 3 : 2,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              team2Name.isNotEmpty ? team2Name[0].toUpperCase() : '?',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 24,
+                                color: team2AvatarColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (team2Won)
+                          Positioned(
+                            top: -8,
+                            left: 0,
+                            right: 0,
+                            child: Center(
+                              child: Icon(
+                                Icons.emoji_events,
+                                color: Colors.amber.shade700,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     Text(
                       team2Name,
                       style: TextStyle(
                         fontWeight: team2Won ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 14,
                         color: team2Won ? Colors.green.shade700 : null,
                       ),
                       textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    if (team2Won)
-                      const Icon(Icons.emoji_events, color: Colors.amber, size: 16),
                   ],
                 ),
               ),
