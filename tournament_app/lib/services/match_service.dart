@@ -365,6 +365,44 @@ class MatchService {
     }
   }
 
+  /// Get upcoming matches for the current user's teams
+  /// Returns matches that are scheduled and haven't been played yet
+  Future<List<Map<String, dynamic>>> getUpcomingMatches({int limit = 5}) async {
+    final now = DateTime.now().toIso8601String();
+
+    final response = await supabase
+        .from('matches')
+        .select('''
+          *,
+          team1:team1_id (id, name, team_color),
+          team2:team2_id (id, name, team_color)
+        ''')
+        .eq('status', 'scheduled')
+        .gte('scheduled_time', now)
+        .order('scheduled_time', ascending: true)
+        .limit(limit);
+
+    return List<Map<String, dynamic>>.from(response as List);
+  }
+
+  /// Get recently completed matches
+  /// Returns matches that have been completed, ordered by most recent
+  Future<List<Map<String, dynamic>>> getRecentCompletedMatches({int limit = 5}) async {
+    final response = await supabase
+        .from('matches')
+        .select('''
+          *,
+          team1:team1_id (id, name, team_color),
+          team2:team2_id (id, name, team_color)
+        ''')
+        .eq('status', 'completed')
+        .not('winner_id', 'is', null)
+        .order('updated_at', ascending: false)
+        .limit(limit);
+
+    return List<Map<String, dynamic>>.from(response as List);
+  }
+
   /// Check if a tournament has any matches generated
   Future<bool> hasTournamentMatches(String tournamentId) async {
     final response = await supabase
