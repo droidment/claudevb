@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/team.dart';
 import '../../services/tournament_service.dart';
+import '../../theme/theme.dart';
 
 class AddTeamsScreen extends StatefulWidget {
   final String tournamentId;
@@ -56,11 +57,12 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
   }
 
   Future<void> _addSelectedTeams() async {
+    final colors = context.colors;
     if (_selectedTeamIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one team'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: const Text('Please select at least one team'),
+          backgroundColor: colors.warning,
         ),
       );
       return;
@@ -80,7 +82,7 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
             content: Text(
               '${_selectedTeamIds.length} team(s) added successfully',
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: colors.success,
           ),
         );
         Navigator.of(context).pop(true);
@@ -90,7 +92,7 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error adding teams: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colors.error,
           ),
         );
       }
@@ -124,20 +126,22 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
   }
 
   Color _getTeamColor(String? teamColor) {
-    if (teamColor == null) return Colors.blue;
+    final colors = context.colors;
+    if (teamColor == null) return colors.accent;
     try {
       return Color(int.parse(teamColor.replaceFirst('#', '0xFF')));
     } catch (e) {
-      return Colors.blue;
+      return colors.accent;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: const Text('Add Teams'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           if (_availableTeams.isNotEmpty)
             PopupMenuButton<String>(
@@ -161,7 +165,7 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
-            color: Theme.of(context).colorScheme.primaryContainer,
+            color: colors.accentSubtle,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -169,7 +173,7 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
                   'Adding to:',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    color: colors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -178,7 +182,7 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    color: colors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -187,14 +191,14 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
                     Icon(
                       Icons.sports,
                       size: 14,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      color: colors.textSecondary,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       'Showing ${widget.sportType == 'volleyball' ? 'Volleyball' : 'Pickleball'} teams only',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ],
@@ -205,7 +209,7 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
                     '${_selectedTeamIds.length} team(s) selected',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      color: colors.textPrimary,
                     ),
                   ),
                 ],
@@ -247,6 +251,7 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
   }
 
   Widget _buildBody() {
+    final colors = context.colors;
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -256,7 +261,7 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: colors.error),
             const SizedBox(height: 16),
             Text('Error: $_error'),
             const SizedBox(height: 16),
@@ -276,7 +281,7 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.group_off, size: 80, color: Colors.grey[400]),
+            Icon(Icons.group_off, size: 80, color: colors.textMuted),
             const SizedBox(height: 24),
             Text(
               'No $sportTypeName Teams Available',
@@ -290,7 +295,7 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                ).textTheme.bodyMedium?.copyWith(color: colors.textSecondary),
               ),
             ),
             const SizedBox(height: 24),
@@ -319,6 +324,7 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
   }
 
   Widget _buildTeamCard(Team team, bool isSelected) {
+    final colors = context.colors;
     final teamColor = _getTeamColor(team.teamColor);
 
     return Card(
@@ -326,7 +332,7 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: isSelected
-            ? BorderSide(color: Theme.of(context).colorScheme.primary, width: 2)
+            ? BorderSide(color: colors.accent, width: 2)
             : BorderSide.none,
       ),
       child: InkWell(
@@ -384,14 +390,14 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
                           Icon(
                             Icons.location_on,
                             size: 14,
-                            color: Colors.grey[600],
+                            color: colors.textSecondary,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             team.homeCity!,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: colors.textSecondary,
                             ),
                           ),
                         ],
@@ -401,13 +407,13 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          Icon(Icons.phone, size: 14, color: Colors.grey[600]),
+                          Icon(Icons.phone, size: 14, color: colors.textSecondary),
                           const SizedBox(width: 4),
                           Text(
                             team.captainPhone!,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: colors.textSecondary,
                             ),
                           ),
                         ],
@@ -424,20 +430,20 @@ class _AddTeamsScreenState extends State<AddTeamsScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade100,
+                    color: colors.successLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check, size: 14, color: Colors.green.shade700),
+                      Icon(Icons.check, size: 14, color: colors.success),
                       const SizedBox(width: 4),
                       Text(
                         'PAID',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green.shade700,
+                          color: colors.success,
                         ),
                       ),
                     ],

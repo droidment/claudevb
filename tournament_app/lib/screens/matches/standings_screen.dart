@@ -3,6 +3,7 @@ import '../../models/scoring_format.dart';
 import '../../models/scoring_config.dart';
 import '../../services/match_service.dart';
 import '../../services/bracket_generator.dart';
+import '../../theme/theme.dart';
 import 'bracket_screen.dart';
 
 class StandingsScreen extends StatefulWidget {
@@ -92,7 +93,7 @@ class _StandingsScreenState extends State<StandingsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading standings: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.colors.error,
           ),
         );
       }
@@ -162,7 +163,7 @@ class _StandingsScreenState extends State<StandingsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${bracketMatches.length} bracket matches generated!'),
-            backgroundColor: Colors.green,
+            backgroundColor: context.colors.success,
           ),
         );
 
@@ -175,7 +176,7 @@ class _StandingsScreenState extends State<StandingsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error generating brackets: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.colors.error,
           ),
         );
       }
@@ -198,9 +199,12 @@ class _StandingsScreenState extends State<StandingsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
-        title: Text('Standings'),
+        title: const Text('Standings'),
+        backgroundColor: colors.cardBackground,
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -229,21 +233,22 @@ class _StandingsScreenState extends State<StandingsScreen>
   }
 
   Widget _buildPoolStandingsTab() {
+    final colors = context.colors;
     if (_poolStandings.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.sports_volleyball, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
+            Icon(Icons.sports_volleyball, size: 64, color: colors.textMuted),
+            const SizedBox(height: 16),
             Text(
               'No matches played yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              style: TextStyle(fontSize: 18, color: colors.textSecondary),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Standings will appear after matches are completed',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: colors.textMuted),
             ),
           ],
         ),
@@ -269,6 +274,7 @@ class _StandingsScreenState extends State<StandingsScreen>
   }
 
   Widget _buildProgressOverview() {
+    final colors = context.colors;
     final progress = _progress!;
     final percentage = (progress.progressPercentage * 100).toStringAsFixed(0);
 
@@ -286,8 +292,8 @@ class _StandingsScreenState extends State<StandingsScreen>
                       ? Icons.check_circle
                       : Icons.schedule,
                   color: progress.isPoolPlayComplete
-                      ? Colors.green
-                      : Colors.orange,
+                      ? colors.success
+                      : colors.warning,
                   size: 28,
                 ),
                 const SizedBox(width: 12),
@@ -306,7 +312,7 @@ class _StandingsScreenState extends State<StandingsScreen>
                       ),
                       Text(
                         '${progress.completedMatches} of ${progress.totalMatches} matches completed ($percentage%)',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(color: colors.textSecondary),
                       ),
                     ],
                   ),
@@ -319,9 +325,9 @@ class _StandingsScreenState extends State<StandingsScreen>
               child: LinearProgressIndicator(
                 value: progress.progressPercentage,
                 minHeight: 12,
-                backgroundColor: Colors.grey[200],
+                backgroundColor: colors.divider,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  progress.isPoolPlayComplete ? Colors.green : Colors.blue,
+                  progress.isPoolPlayComplete ? colors.success : colors.accent,
                 ),
               ),
             ),
@@ -339,12 +345,12 @@ class _StandingsScreenState extends State<StandingsScreen>
                   avatar: Icon(
                     poolComplete ? Icons.check_circle : Icons.pending,
                     size: 18,
-                    color: poolComplete ? Colors.green : Colors.orange,
+                    color: poolComplete ? colors.success : colors.warning,
                   ),
                   label: Text('Pool ${entry.key}: $completed/$total'),
                   backgroundColor: poolComplete
-                      ? Colors.green.shade50
-                      : Colors.orange.shade50,
+                      ? colors.successLight
+                      : colors.warningLight,
                 );
               }).toList(),
             ),
@@ -355,6 +361,7 @@ class _StandingsScreenState extends State<StandingsScreen>
   }
 
   Widget _buildPoolCard(String poolName, List<TeamStanding> standings) {
+    final colors = context.colors;
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -373,24 +380,24 @@ class _StandingsScreenState extends State<StandingsScreen>
             ),
             child: Text(
               'Pool $poolName',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: colors.textPrimary,
               ),
             ),
           ),
           // Table Header
           Container(
-            color: Colors.grey[100],
+            color: colors.cardBackgroundLight,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
+            child: const Row(
               children: [
-                const SizedBox(width: 32), // Rank
-                const Expanded(flex: 3, child: Text('Team', style: TextStyle(fontWeight: FontWeight.bold))),
-                const SizedBox(width: 40, child: Text('W', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
-                const SizedBox(width: 40, child: Text('L', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
-                const SizedBox(width: 60, child: Text('+/-', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
+                SizedBox(width: 32), // Rank
+                Expanded(flex: 3, child: Text('Team', style: TextStyle(fontWeight: FontWeight.bold))),
+                SizedBox(width: 40, child: Text('W', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
+                SizedBox(width: 40, child: Text('L', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
+                SizedBox(width: 60, child: Text('+/-', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
               ],
             ),
           ),
@@ -406,17 +413,18 @@ class _StandingsScreenState extends State<StandingsScreen>
   }
 
   Widget _buildTeamRow(int rank, TeamStanding standing, int totalTeams) {
+    final colors = context.colors;
     // Determine tier color based on rank
     Color? rowColor;
     if (_progress?.isPoolPlayComplete == true) {
       // Show tier assignment preview
       final overallRank = _overallStandings.indexWhere((s) => s.teamId == standing.teamId) + 1;
       if (overallRank <= widget.advancedTierSize) {
-        rowColor = Colors.green.shade50;
+        rowColor = colors.successLight;
       } else if (overallRank <= widget.advancedTierSize + widget.intermediateTierSize) {
-        rowColor = Colors.blue.shade50;
+        rowColor = colors.accentLight;
       } else if (overallRank <= widget.advancedTierSize + widget.intermediateTierSize + widget.recreationalTierSize) {
-        rowColor = Colors.orange.shade50;
+        rowColor = colors.warningLight;
       }
     }
 
@@ -433,12 +441,12 @@ class _StandingsScreenState extends State<StandingsScreen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: rank == 1
-                    ? Colors.amber
+                    ? colors.warning
                     : rank == 2
-                        ? Colors.grey[400]
+                        ? colors.textMuted
                         : rank == 3
-                            ? Colors.brown[300]
-                            : Colors.grey[200],
+                            ? colors.textSecondary
+                            : colors.divider,
               ),
               child: Center(
                 child: Text(
@@ -446,7 +454,7 @@ class _StandingsScreenState extends State<StandingsScreen>
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
-                    color: rank <= 3 ? Colors.white : Colors.black,
+                    color: rank <= 3 ? colors.textPrimary : colors.textSecondary,
                   ),
                 ),
               ),
@@ -465,7 +473,7 @@ class _StandingsScreenState extends State<StandingsScreen>
                 if (standing.matchesPlayed > 0)
                   Text(
                     '${standing.matchesPlayed} played',
-                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 11, color: colors.textSecondary),
                   ),
               ],
             ),
@@ -477,7 +485,7 @@ class _StandingsScreenState extends State<StandingsScreen>
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Colors.green[700],
+                color: colors.success,
               ),
             ),
           ),
@@ -488,7 +496,7 @@ class _StandingsScreenState extends State<StandingsScreen>
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Colors.red[700],
+                color: colors.error,
               ),
             ),
           ),
@@ -500,10 +508,10 @@ class _StandingsScreenState extends State<StandingsScreen>
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: standing.pointDifferential > 0
-                    ? Colors.green[700]
+                    ? colors.success
                     : standing.pointDifferential < 0
-                        ? Colors.red[700]
-                        : Colors.grey,
+                        ? colors.error
+                        : colors.textMuted,
               ),
             ),
           ),
@@ -513,21 +521,22 @@ class _StandingsScreenState extends State<StandingsScreen>
   }
 
   Widget _buildTierProgressionTab() {
+    final colors = context.colors;
     if (_overallStandings.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.emoji_events, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
+            Icon(Icons.emoji_events, size: 64, color: colors.textMuted),
+            const SizedBox(height: 16),
             Text(
               'No standings yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              style: TextStyle(fontSize: 18, color: colors.textSecondary),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Complete pool play matches to see tier assignments',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: colors.textMuted),
             ),
           ],
         ),
@@ -547,18 +556,18 @@ class _StandingsScreenState extends State<StandingsScreen>
           // Progress indicator or bracket actions
           if (_progress != null && !_progress!.isPoolPlayComplete)
             Card(
-              color: Colors.amber.shade50,
+              color: colors.warningLight,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    const Icon(Icons.info, color: Colors.amber),
+                    Icon(Icons.info, color: colors.warning),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'Pool play is ${(_progress!.progressPercentage * 100).toStringAsFixed(0)}% complete. '
                         'Tier assignments may change as more matches are completed.',
-                        style: TextStyle(color: Colors.amber.shade900),
+                        style: TextStyle(color: colors.textPrimary),
                       ),
                     ),
                   ],
@@ -567,7 +576,7 @@ class _StandingsScreenState extends State<StandingsScreen>
             ),
           if (_progress != null && _progress!.isPoolPlayComplete)
             Card(
-              color: _hasBrackets ? Colors.green.shade50 : Colors.blue.shade50,
+              color: _hasBrackets ? colors.successLight : colors.accentLight,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -577,7 +586,7 @@ class _StandingsScreenState extends State<StandingsScreen>
                       children: [
                         Icon(
                           _hasBrackets ? Icons.check_circle : Icons.emoji_events,
-                          color: _hasBrackets ? Colors.green : Colors.blue,
+                          color: _hasBrackets ? colors.success : colors.accent,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -587,9 +596,7 @@ class _StandingsScreenState extends State<StandingsScreen>
                                 : 'Pool play complete! Ready to generate tier brackets.',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: _hasBrackets
-                                  ? Colors.green.shade900
-                                  : Colors.blue.shade900,
+                              color: colors.textPrimary,
                             ),
                           ),
                         ),
@@ -628,7 +635,7 @@ class _StandingsScreenState extends State<StandingsScreen>
           _buildTierCard(
             'Advanced',
             Icons.star,
-            Colors.green,
+            colors.success,
             _overallStandings.take(advancedEnd).toList(),
             1,
           ),
@@ -637,7 +644,7 @@ class _StandingsScreenState extends State<StandingsScreen>
           _buildTierCard(
             'Intermediate',
             Icons.trending_up,
-            Colors.blue,
+            colors.accent,
             _overallStandings.skip(advancedEnd).take(widget.intermediateTierSize).toList(),
             advancedEnd + 1,
           ),
@@ -646,7 +653,7 @@ class _StandingsScreenState extends State<StandingsScreen>
           _buildTierCard(
             'Recreational',
             Icons.sports_volleyball,
-            Colors.orange,
+            colors.warning,
             _overallStandings.skip(intermediateEnd).take(widget.recreationalTierSize).toList(),
             intermediateEnd + 1,
           ),
@@ -657,7 +664,7 @@ class _StandingsScreenState extends State<StandingsScreen>
             _buildTierCard(
               'Eliminated',
               Icons.cancel,
-              Colors.grey,
+              colors.textMuted,
               _overallStandings.skip(recreationalEnd).toList(),
               recreationalEnd + 1,
             ),
@@ -674,6 +681,7 @@ class _StandingsScreenState extends State<StandingsScreen>
     List<TeamStanding> teams,
     int startRank,
   ) {
+    final colors = context.colors;
     return Card(
       elevation: 3,
       child: Column(
@@ -694,26 +702,26 @@ class _StandingsScreenState extends State<StandingsScreen>
             ),
             child: Row(
               children: [
-                Icon(icon, color: Colors.white, size: 28),
+                Icon(icon, color: colors.textPrimary, size: 28),
                 const SizedBox(width: 12),
                 Text(
                   '$tierName Tier',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: colors.textPrimary,
                   ),
                 ),
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: colors.textPrimary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     '${teams.length} teams',
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: colors.textPrimary),
                   ),
                 ),
               ],
@@ -724,7 +732,7 @@ class _StandingsScreenState extends State<StandingsScreen>
               padding: const EdgeInsets.all(24),
               child: Text(
                 'No teams assigned yet',
-                style: TextStyle(color: Colors.grey[600]),
+                style: TextStyle(color: colors.textSecondary),
               ),
             )
           else
@@ -737,7 +745,7 @@ class _StandingsScreenState extends State<StandingsScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   border: Border(
-                    bottom: BorderSide(color: Colors.grey.shade200),
+                    bottom: BorderSide(color: colors.divider),
                   ),
                 ),
                 child: Row(
@@ -776,7 +784,7 @@ class _StandingsScreenState extends State<StandingsScreen>
                             'Pool ${standing.pool} • ${standing.wins}W-${standing.losses}L',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: colors.textSecondary,
                             ),
                           ),
                         ],
@@ -790,15 +798,15 @@ class _StandingsScreenState extends State<StandingsScreen>
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: standing.pointDifferential > 0
-                                ? Colors.green
+                                ? colors.success
                                 : standing.pointDifferential < 0
-                                    ? Colors.red
-                                    : Colors.grey,
+                                    ? colors.error
+                                    : colors.textMuted,
                           ),
                         ),
                         Text(
                           'pt diff',
-                          style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                          style: TextStyle(fontSize: 10, color: colors.textMuted),
                         ),
                       ],
                     ),
@@ -812,9 +820,10 @@ class _StandingsScreenState extends State<StandingsScreen>
   }
 
   Color _getPoolColor(String poolName) {
+    final colors = context.colors;
     switch (poolName.toUpperCase()) {
       case 'A':
-        return Colors.blue;
+        return colors.accent;
       case 'B':
         return Colors.purple;
       case 'C':
@@ -826,7 +835,7 @@ class _StandingsScreenState extends State<StandingsScreen>
       case 'F':
         return Colors.cyan;
       default:
-        return Colors.blueGrey;
+        return colors.textMuted;
     }
   }
 }
@@ -884,6 +893,7 @@ class _GenerateBracketsDialogState extends State<_GenerateBracketsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return AlertDialog(
       title: const Text('Generate Tier Brackets'),
       content: SingleChildScrollView(
@@ -893,7 +903,7 @@ class _GenerateBracketsDialogState extends State<_GenerateBracketsDialog> {
           children: [
             // Tier summary
             Card(
-              color: Colors.blue.shade50,
+              color: colors.accentLight,
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
@@ -907,17 +917,17 @@ class _GenerateBracketsDialogState extends State<_GenerateBracketsDialog> {
                     _buildTierInfo(
                       'Advanced',
                       widget.advancedTeams,
-                      Colors.green,
+                      colors.success,
                     ),
                     _buildTierInfo(
                       'Intermediate',
                       widget.intermediateTeams,
-                      Colors.blue,
+                      colors.accent,
                     ),
                     _buildTierInfo(
                       'Recreational',
                       widget.recreationalTeams,
-                      Colors.orange,
+                      colors.warning,
                     ),
                     const Divider(),
                     Text(
@@ -965,7 +975,7 @@ class _GenerateBracketsDialogState extends State<_GenerateBracketsDialog> {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
+                  border: Border.all(color: colors.divider),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -1040,6 +1050,7 @@ class _GenerateBracketsDialogState extends State<_GenerateBracketsDialog> {
   Widget _buildTierInfo(String tierName, int teamCount, Color color) {
     if (teamCount <= 0) return const SizedBox.shrink();
 
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -1060,7 +1071,7 @@ class _GenerateBracketsDialogState extends State<_GenerateBracketsDialog> {
             _getRoundInfo(teamCount),
             style: TextStyle(
               fontSize: 11,
-              color: Colors.grey[600],
+              color: colors.textSecondary,
             ),
           ),
         ],

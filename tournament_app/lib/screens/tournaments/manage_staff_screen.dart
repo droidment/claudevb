@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/tournament_staff.dart';
 import '../../services/tournament_staff_service.dart';
+import '../../theme/theme.dart';
 
 class ManageStaffScreen extends StatefulWidget {
   final String tournamentId;
@@ -41,11 +42,12 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final colors = context.colors;
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading staff: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colors.error,
           ),
         );
       }
@@ -71,19 +73,21 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
         );
         _loadStaff();
         if (mounted) {
+          final colors = context.colors;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Staff member added'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Staff member added'),
+              backgroundColor: colors.success,
             ),
           );
         }
       } catch (e) {
         if (mounted) {
+          final colors = context.colors;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error adding staff: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: colors.error,
             ),
           );
         }
@@ -122,19 +126,21 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
         );
         _loadStaff();
         if (mounted) {
+          final colors = context.colors;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Changed ${staff.displayName} to ${newRole.displayName}'),
-              backgroundColor: Colors.green,
+              backgroundColor: colors.success,
             ),
           );
         }
       } catch (e) {
         if (mounted) {
+          final colors = context.colors;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error changing role: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: colors.error,
             ),
           );
         }
@@ -143,6 +149,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
   }
 
   Future<void> _removeStaff(TournamentStaff staff) async {
+    final colors = context.colors;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -158,7 +165,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: colors.error),
             child: const Text('Remove'),
           ),
         ],
@@ -173,7 +180,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Removed ${staff.displayName}'),
-              backgroundColor: Colors.green,
+              backgroundColor: colors.success,
             ),
           );
         }
@@ -182,7 +189,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error removing staff: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: colors.error,
             ),
           );
         }
@@ -192,7 +199,9 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +213,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
             ),
           ],
         ),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -218,24 +226,25 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
   }
 
   Widget _buildBody() {
+    final colors = context.colors;
     if (_staff.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.group_off, size: 64, color: Colors.grey[400]),
+            Icon(Icons.group_off, size: 64, color: colors.textMuted),
             const SizedBox(height: 16),
             Text(
               'No staff members yet',
               style: TextStyle(
                 fontSize: 18,
-                color: Colors.grey[600],
+                color: colors.textSecondary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Add admins or scorers to help manage this tournament',
-              style: TextStyle(color: Colors.grey[500]),
+              style: TextStyle(color: colors.textMuted),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -256,13 +265,13 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
           _buildRoleExplanation(),
           const SizedBox(height: 24),
           if (admins.isNotEmpty) ...[
-            _buildSectionHeader('Admins', Icons.admin_panel_settings, Colors.blue),
+            _buildSectionHeader('Admins', Icons.admin_panel_settings, colors.accent),
             const SizedBox(height: 8),
             ...admins.map(_buildStaffTile),
             const SizedBox(height: 16),
           ],
           if (scorers.isNotEmpty) ...[
-            _buildSectionHeader('Scorers', Icons.sports_score, Colors.orange),
+            _buildSectionHeader('Scorers', Icons.sports_score, colors.warning),
             const SizedBox(height: 8),
             ...scorers.map(_buildStaffTile),
           ],
@@ -272,8 +281,9 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
   }
 
   Widget _buildRoleExplanation() {
+    final colors = context.colors;
     return Card(
-      color: Colors.blue.shade50,
+      color: colors.accentLight,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -281,13 +291,13 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.blue.shade700),
+                Icon(Icons.info_outline, color: colors.accent),
                 const SizedBox(width: 8),
                 Text(
                   'Staff Roles',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade700,
+                    color: colors.accent,
                   ),
                 ),
               ],
@@ -297,14 +307,14 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
               Icons.admin_panel_settings,
               'Admin',
               'Full control: edit tournament, manage teams, enter scores',
-              Colors.blue,
+              colors.accent,
             ),
             const SizedBox(height: 8),
             _buildRoleRow(
               Icons.sports_score,
               'Scorer',
               'Score entry only: start matches and enter scores',
-              Colors.orange,
+              colors.warning,
             ),
           ],
         ),
@@ -313,6 +323,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
   }
 
   Widget _buildRoleRow(IconData icon, String title, String description, Color color) {
+    final colors = context.colors;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -333,7 +344,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
                 description,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[700],
+                  color: colors.textSecondary,
                 ),
               ),
             ],
@@ -361,33 +372,38 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
   }
 
   Widget _buildStaffTile(TournamentStaff staff) {
+    final colors = context.colors;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      color: colors.cardBackground,
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: staff.role == StaffRole.admin
-              ? Colors.blue.shade100
-              : Colors.orange.shade100,
+              ? colors.accentLight
+              : colors.warningLight,
           child: Icon(
             staff.role == StaffRole.admin
                 ? Icons.admin_panel_settings
                 : Icons.sports_score,
-            color: staff.role == StaffRole.admin ? Colors.blue : Colors.orange,
+            color: staff.role == StaffRole.admin ? colors.accent : colors.warning,
           ),
         ),
-        title: Text(staff.displayName),
+        title: Text(
+          staff.displayName,
+          style: TextStyle(color: colors.textPrimary),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (staff.userEmail != null && staff.userName != null)
               Text(
                 staff.userEmail!,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 12, color: colors.textSecondary),
               ),
             if (staff.assignedByName != null)
               Text(
                 'Added by ${staff.assignedByName}',
-                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                style: TextStyle(fontSize: 11, color: colors.textMuted),
               ),
           ],
         ),
@@ -417,13 +433,13 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'remove',
               child: Row(
                 children: [
-                  Icon(Icons.person_remove, size: 20, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Remove', style: TextStyle(color: Colors.red)),
+                  Icon(Icons.person_remove, size: 20, color: colors.error),
+                  const SizedBox(width: 8),
+                  Text('Remove', style: TextStyle(color: colors.error)),
                 ],
               ),
             ),
@@ -492,6 +508,7 @@ class _AddStaffDialogState extends State<_AddStaffDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return AlertDialog(
       title: const Text('Add Staff Member'),
       content: SizedBox(
@@ -525,15 +542,19 @@ class _AddStaffDialogState extends State<_AddStaffDialog> {
 
             // Search results
             if (_searchResults.isNotEmpty && _selectedUser == null) ...[
-              const Text(
+              Text(
                 'Search Results:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: colors.textPrimary,
+                ),
               ),
               const SizedBox(height: 8),
               Container(
                 constraints: const BoxConstraints(maxHeight: 150),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: colors.divider),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: ListView.builder(
@@ -567,11 +588,11 @@ class _AddStaffDialogState extends State<_AddStaffDialog> {
             if (_selectedUser != null) ...[
               const SizedBox(height: 8),
               Card(
-                color: Colors.green.shade50,
+                color: colors.successLight,
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: Colors.green.shade100,
-                    child: const Icon(Icons.check, color: Colors.green),
+                    backgroundColor: colors.success.withValues(alpha: 0.2),
+                    child: Icon(Icons.check, color: colors.success),
                   ),
                   title: Text(_selectedUser!['full_name'] ?? _selectedUser!['email']),
                   subtitle: _selectedUser!['full_name'] != null
@@ -591,9 +612,13 @@ class _AddStaffDialogState extends State<_AddStaffDialog> {
               const SizedBox(height: 16),
 
               // Role selection
-              const Text(
+              Text(
                 'Select Role:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: colors.textPrimary,
+                ),
               ),
               const SizedBox(height: 8),
               _buildRoleOption(
@@ -601,7 +626,7 @@ class _AddStaffDialogState extends State<_AddStaffDialog> {
                 'Scorer',
                 'Can start matches and enter scores',
                 Icons.sports_score,
-                Colors.orange,
+                colors.warning,
               ),
               const SizedBox(height: 8),
               _buildRoleOption(
@@ -609,7 +634,7 @@ class _AddStaffDialogState extends State<_AddStaffDialog> {
                 'Admin',
                 'Full tournament control',
                 Icons.admin_panel_settings,
-                Colors.blue,
+                colors.accent,
               ),
             ],
           ],
@@ -642,6 +667,7 @@ class _AddStaffDialogState extends State<_AddStaffDialog> {
     IconData icon,
     Color color,
   ) {
+    final colors = context.colors;
     final isSelected = _selectedRole == role;
     return InkWell(
       onTap: () => setState(() => _selectedRole = role),
@@ -650,7 +676,7 @@ class _AddStaffDialogState extends State<_AddStaffDialog> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           border: Border.all(
-            color: isSelected ? color : Colors.grey.shade300,
+            color: isSelected ? color : colors.divider,
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(8),
@@ -668,12 +694,12 @@ class _AddStaffDialogState extends State<_AddStaffDialog> {
                     title,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? color : null,
+                      color: isSelected ? color : colors.textPrimary,
                     ),
                   ),
                   Text(
                     description,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 12, color: colors.textSecondary),
                   ),
                 ],
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/team.dart';
 import '../../services/team_service.dart';
+import '../../theme/theme.dart';
 import 'create_team_screen.dart';
 import 'import_teams_screen.dart';
 import 'team_detail_screen.dart';
@@ -65,11 +66,12 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
   }
 
   Color _getTeamColor(String? teamColor) {
-    if (teamColor == null) return Colors.blue;
+    final colors = context.colors;
+    if (teamColor == null) return colors.accent;
     try {
       return Color(int.parse(teamColor.replaceFirst('#', '0xFF')));
     } catch (e) {
-      return Colors.blue;
+      return colors.accent;
     }
   }
 
@@ -85,10 +87,11 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: const Text('My Teams'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.upload_file),
@@ -107,6 +110,8 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
   }
 
   Widget _buildBody() {
+    final colors = context.colors;
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -116,7 +121,7 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: colors.error),
             const SizedBox(height: 16),
             Text('Error: $_error'),
             const SizedBox(height: 16),
@@ -131,18 +136,20 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.groups_outlined, size: 100, color: Colors.grey[400]),
+            Icon(Icons.groups_outlined, size: 100, color: colors.textMuted),
             const SizedBox(height: 24),
             Text(
               'No Teams Yet',
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: colors.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Create your first team to get started!',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colors.textSecondary,
+              ),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -169,10 +176,12 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
   }
 
   Widget _buildTeamCard(Team team) {
+    final colors = context.colors;
     final teamColor = _getTeamColor(team.teamColor);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
+      color: colors.cardBackground,
       child: InkWell(
         onTap: () => _navigateToTeamDetail(team.id),
         borderRadius: BorderRadius.circular(12),
@@ -208,14 +217,14 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
                       bottom: 0,
                       child: Container(
                         padding: const EdgeInsets.all(2),
-                        decoration: const BoxDecoration(
-                          color: Colors.green,
+                        decoration: BoxDecoration(
+                          color: colors.success,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.check,
                           size: 14,
-                          color: Colors.white,
+                          color: colors.isDark ? Colors.white : Colors.white,
                         ),
                       ),
                     ),
@@ -233,7 +242,10 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
                           child: Text(
                             team.name,
                             style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(fontWeight: FontWeight.bold),
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.textPrimary,
+                                ),
                           ),
                         ),
                         if (team.registrationPaid)
@@ -243,15 +255,15 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.green.shade100,
+                              color: colors.successLight,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Text(
+                            child: Text(
                               'PAID',
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.green,
+                                color: colors.success,
                               ),
                             ),
                           ),
@@ -265,13 +277,13 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
                             Icon(
                               Icons.location_on,
                               size: 16,
-                              color: Colors.grey[600],
+                              color: colors.textSecondary,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               team.homeCity!,
                               style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: Colors.grey[600]),
+                                  ?.copyWith(color: colors.textSecondary),
                             ),
                           ],
                         ],
@@ -285,13 +297,13 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
                             Icon(
                               Icons.phone,
                               size: 14,
-                              color: Colors.grey[500],
+                              color: colors.textMuted,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               team.captainPhone!,
                               style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: Colors.grey[500]),
+                                  ?.copyWith(color: colors.textMuted),
                             ),
                           ],
                           if (team.lunchCount > 0) ...[
@@ -299,13 +311,13 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
                             Icon(
                               Icons.restaurant,
                               size: 14,
-                              color: Colors.orange[400],
+                              color: colors.warning,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               '${team.lunchCount} lunches',
                               style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: Colors.orange[600]),
+                                  ?.copyWith(color: colors.warning),
                             ),
                           ],
                         ],
@@ -314,7 +326,7 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16),
+              Icon(Icons.arrow_forward_ios, size: 16, color: colors.textMuted),
             ],
           ),
         ),

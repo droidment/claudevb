@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/team.dart';
 import '../../models/player.dart';
 import '../../services/team_service.dart';
+import '../../theme/theme.dart';
 
 class TeamDetailScreen extends StatefulWidget {
   final String teamId;
@@ -71,6 +72,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Future<void> _deletePlayer(Player player) async {
+    final colors = context.colors;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -83,7 +85,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: colors.error),
             child: const Text('Delete'),
           ),
         ],
@@ -96,9 +98,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
         _loadTeamData();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Player removed from roster'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Player removed from roster'),
+              backgroundColor: colors.success,
             ),
           );
         }
@@ -107,7 +109,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error removing player: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: colors.error,
             ),
           );
         }
@@ -116,6 +118,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Future<void> _deleteTeam() async {
+    final colors = context.colors;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -130,7 +133,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: colors.error),
             child: const Text('Delete'),
           ),
         ],
@@ -143,9 +146,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
         if (mounted) {
           Navigator.of(context).pop(true);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Team deleted successfully'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Team deleted successfully'),
+              backgroundColor: colors.success,
             ),
           );
         }
@@ -154,7 +157,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error deleting team: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: colors.error,
             ),
           );
         }
@@ -163,11 +166,12 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Color _getTeamColor() {
-    if (_team?.teamColor == null) return Colors.blue;
+    final colors = context.colors;
+    if (_team?.teamColor == null) return colors.accent;
     try {
       return Color(int.parse(_team!.teamColor!.replaceFirst('#', '0xFF')));
     } catch (e) {
-      return Colors.blue;
+      return colors.accent;
     }
   }
 
@@ -177,6 +181,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Widget _buildRegistrationInfoCard() {
+    final colors = context.colors;
     // Check if we have any contact or registration info to display
     final hasAnyInfo =
         _team!.captainName != null ||
@@ -195,6 +200,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
     }
 
     return Card(
+      color: colors.cardBackground,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -204,18 +210,19 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
               children: [
                 Icon(
                   Icons.assignment,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: colors.accent,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   'Registration Info',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: colors.textPrimary,
                   ),
                 ),
               ],
             ),
-            const Divider(height: 24),
+            Divider(height: 24, color: colors.divider),
 
             // Captain Information
             if (_team!.captainName != null)
@@ -235,7 +242,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
 
             // Contact Person 2
             if (_team!.contactPerson2 != null) ...[
-              const Divider(height: 24),
+              Divider(height: 24, color: colors.divider),
               _buildInfoRow(
                 Icons.person_outline,
                 'Contact Person 2',
@@ -262,11 +269,11 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
             // Special Requests
             if (_team!.specialRequests != null &&
                 _team!.specialRequests!.isNotEmpty) ...[
-              const Divider(height: 24),
+              Divider(height: 24, color: colors.divider),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.note, size: 20, color: Colors.orange[600]),
+                  Icon(Icons.note, size: 20, color: colors.warning),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -276,7 +283,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                           'Special Requests',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: colors.textSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -285,13 +292,16 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.orange.shade50,
+                            color: colors.warningLight,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.orange.shade200),
+                            border: Border.all(color: colors.warning.withOpacity(0.3)),
                           ),
                           child: Text(
                             _team!.specialRequests!,
-                            style: const TextStyle(fontSize: 14),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: colors.textPrimary,
+                            ),
                           ),
                         ),
                       ],
@@ -303,11 +313,11 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
 
             // Notes
             if (_team!.notes != null && _team!.notes!.isNotEmpty) ...[
-              const Divider(height: 24),
+              Divider(height: 24, color: colors.divider),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.sticky_note_2, size: 20, color: Colors.blue[600]),
+                  Icon(Icons.sticky_note_2, size: 20, color: colors.accent),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -317,7 +327,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                           'Notes',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: colors.textSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -326,13 +336,16 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
+                            color: colors.accentLight,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue.shade200),
+                            border: Border.all(color: colors.accent.withOpacity(0.3)),
                           ),
                           child: Text(
                             _team!.notes!,
-                            style: const TextStyle(fontSize: 14),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: colors.textPrimary,
+                            ),
                           ),
                         ),
                       ],
@@ -348,12 +361,13 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
+          Icon(icon, size: 20, color: colors.textSecondary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -361,14 +375,15 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 12, color: colors.textSecondary),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
+                    color: colors.textPrimary,
                   ),
                 ),
               ],
@@ -381,10 +396,11 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: Text(_team?.name ?? 'Team Details'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.delete),
@@ -405,6 +421,8 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Widget _buildBody() {
+    final colors = context.colors;
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -414,7 +432,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: colors.error),
             const SizedBox(height: 16),
             Text('Error: ${_error ?? "Team not found"}'),
             const SizedBox(height: 16),
@@ -465,6 +483,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                     _team!.name,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: colors.textPrimary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -476,13 +495,13 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                         Icon(
                           Icons.location_on,
                           size: 16,
-                          color: Colors.grey[600],
+                          color: colors.textSecondary,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           _team!.homeCity!,
                           style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: Colors.grey[600]),
+                              ?.copyWith(color: colors.textSecondary),
                         ),
                       ],
                     ),
@@ -495,13 +514,13 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade100,
+                        color: colors.accentLight,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
                         _team!.category!,
                         style: TextStyle(
-                          color: Colors.blue.shade800,
+                          color: colors.accent,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -521,7 +540,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.green.shade100,
+                            color: colors.successLight,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Row(
@@ -530,13 +549,13 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                               Icon(
                                 Icons.check_circle,
                                 size: 16,
-                                color: Colors.green.shade700,
+                                color: colors.success,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 'PAID',
                                 style: TextStyle(
-                                  color: Colors.green.shade700,
+                                  color: colors.success,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -550,7 +569,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.orange.shade100,
+                            color: colors.warningLight,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Row(
@@ -559,13 +578,13 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                               Icon(
                                 Icons.pending,
                                 size: 16,
-                                color: Colors.orange.shade700,
+                                color: colors.warning,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 'PENDING',
                                 style: TextStyle(
-                                  color: Colors.orange.shade700,
+                                  color: colors.warning,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -579,7 +598,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.amber.shade100,
+                            color: colors.warningLight,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Row(
@@ -588,13 +607,13 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                               Icon(
                                 Icons.restaurant,
                                 size: 16,
-                                color: Colors.amber.shade800,
+                                color: colors.warning,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 '${_team!.lunchCount} Lunches',
                                 style: TextStyle(
-                                  color: Colors.amber.shade800,
+                                  color: colors.warning,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -608,7 +627,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.purple.shade100,
+                            color: colors.accentLight,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Row(
@@ -617,13 +636,13 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                               Icon(
                                 Icons.group,
                                 size: 16,
-                                color: Colors.purple.shade700,
+                                color: colors.accent,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 '${_team!.playerCount} Players',
                                 style: TextStyle(
-                                  color: Colors.purple.shade700,
+                                  color: colors.accent,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -648,9 +667,10 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
             children: [
               Text(
                 'Roster (${_players.length} players)',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                ),
               ),
               if (_players.isNotEmpty)
                 Chip(
@@ -663,6 +683,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
 
           if (_players.isEmpty)
             Card(
+              color: colors.cardBackground,
               child: Padding(
                 padding: const EdgeInsets.all(32),
                 child: Column(
@@ -670,19 +691,21 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                     Icon(
                       Icons.person_add_outlined,
                       size: 64,
-                      color: Colors.grey[400],
+                      color: colors.textMuted,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'No Players Yet',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: colors.textPrimary,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Add players to your roster',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: colors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -696,22 +719,29 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Widget _buildPlayerCard(Player player) {
+    final colors = context.colors;
+    final teamColor = _getTeamColor();
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      color: colors.cardBackground,
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: _getTeamColor().withOpacity(0.2),
+          backgroundColor: teamColor.withOpacity(0.2),
           child: Text(
             player.jerseyNumber?.toString() ?? '?',
             style: TextStyle(
-              color: _getTeamColor(),
+              color: teamColor,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
         title: Text(
           player.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: colors.textPrimary,
+          ),
         ),
         subtitle: Text(
           [
@@ -721,26 +751,27 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
               )?.displayName,
             if (player.heightInches != null) player.heightFormatted,
           ].where((e) => e != null).join(' • '),
+          style: TextStyle(color: colors.textSecondary),
         ),
         trailing: PopupMenuButton(
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'edit',
               child: Row(
                 children: [
-                  Icon(Icons.edit, size: 20),
-                  SizedBox(width: 12),
-                  Text('Edit'),
+                  Icon(Icons.edit, size: 20, color: colors.textPrimary),
+                  const SizedBox(width: 12),
+                  Text('Edit', style: TextStyle(color: colors.textPrimary)),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
               child: Row(
                 children: [
-                  Icon(Icons.delete, size: 20, color: Colors.red),
-                  SizedBox(width: 12),
-                  Text('Delete', style: TextStyle(color: Colors.red)),
+                  Icon(Icons.delete, size: 20, color: colors.error),
+                  const SizedBox(width: 12),
+                  Text('Delete', style: TextStyle(color: colors.error)),
                 ],
               ),
             ),
@@ -797,6 +828,8 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
 
     setState(() => _isLoading = true);
 
+    final colors = context.colors;
+
     try {
       int? heightInches;
       if (_heightFeetController.text.isNotEmpty ||
@@ -825,9 +858,9 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
       if (mounted) {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Player added successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Player added successfully!'),
+            backgroundColor: colors.success,
           ),
         );
       }
@@ -836,7 +869,7 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error adding player: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colors.error,
           ),
         );
       }
@@ -1007,6 +1040,8 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
 
     setState(() => _isLoading = true);
 
+    final colors = context.colors;
+
     try {
       int? heightInches;
       if (_heightFeetController.text.isNotEmpty ||
@@ -1028,9 +1063,9 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
       if (mounted) {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Player updated successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Player updated successfully!'),
+            backgroundColor: colors.success,
           ),
         );
       }
@@ -1039,7 +1074,7 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error updating player: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colors.error,
           ),
         );
       }

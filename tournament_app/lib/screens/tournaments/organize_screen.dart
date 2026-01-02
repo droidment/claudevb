@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/tournament.dart';
 import '../../services/tournament_service.dart';
+import '../../theme/theme.dart';
 import 'create_tournament_screen.dart';
 import 'tournament_detail_screen.dart';
 
@@ -54,17 +55,18 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
   }
 
   Color _getStatusColor(TournamentStatus status) {
+    final colors = context.colors;
     switch (status) {
       case TournamentStatus.registrationOpen:
-        return Colors.green;
+        return colors.success;
       case TournamentStatus.registrationClosed:
-        return Colors.orange;
+        return colors.warning;
       case TournamentStatus.ongoing:
-        return Colors.blue;
+        return colors.accent;
       case TournamentStatus.completed:
-        return Colors.grey;
+        return colors.textMuted;
       case TournamentStatus.cancelled:
-        return Colors.red;
+        return colors.error;
     }
   }
 
@@ -76,7 +78,9 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       body: _buildBody(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _navigateToCreateTournament,
@@ -87,6 +91,7 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
   }
 
   Widget _buildBody() {
+    final colors = context.colors;
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -96,7 +101,7 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: colors.error),
             const SizedBox(height: 16),
             Text('Error: $_error'),
             const SizedBox(height: 16),
@@ -117,7 +122,7 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
             Icon(
               Icons.emoji_events_outlined,
               size: 100,
-              color: Colors.grey[400],
+              color: colors.textMuted,
             ),
             const SizedBox(height: 24),
             Text(
@@ -129,7 +134,7 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
               'Create your first tournament to get started!',
               style: Theme.of(
                 context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+              ).textTheme.bodyMedium?.copyWith(color: colors.textSecondary),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -171,6 +176,7 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
   }
 
   Widget _buildTournamentCard(Tournament tournament) {
+    final colors = context.colors;
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
@@ -186,7 +192,7 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
                   Icon(
                     _getSportIcon(tournament.sportType),
                     size: 32,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: colors.accent,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -202,7 +208,7 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
                         Text(
                           tournament.format.displayName,
                           style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: Colors.grey[600]),
+                              ?.copyWith(color: colors.textSecondary),
                         ),
                       ],
                     ),
@@ -210,7 +216,10 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
                   Chip(
                     label: Text(
                       tournament.status.displayName,
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      style: TextStyle(
+                        color: colors.isDark ? colors.textPrimary : Colors.white,
+                        fontSize: 12,
+                      ),
                     ),
                     backgroundColor: _getStatusColor(tournament.status),
                     padding: EdgeInsets.zero,
@@ -233,7 +242,7 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
               Row(
                 children: [
                   if (tournament.location != null) ...[
-                    Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                    Icon(Icons.location_on, size: 16, color: colors.textSecondary),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -248,7 +257,7 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
                     Icon(
                       Icons.calendar_today,
                       size: 16,
-                      color: Colors.grey[600],
+                      color: colors.textSecondary,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -264,7 +273,7 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
                 Row(
                   children: [
                     if (tournament.maxTeams != null) ...[
-                      Icon(Icons.groups, size: 16, color: Colors.grey[600]),
+                      Icon(Icons.groups, size: 16, color: colors.textSecondary),
                       const SizedBox(width: 4),
                       Text(
                         'Max ${tournament.maxTeams} teams',
@@ -276,7 +285,7 @@ class _OrganizeScreenState extends State<OrganizeScreen> {
                       Icon(
                         Icons.attach_money,
                         size: 16,
-                        color: Colors.grey[600],
+                        color: colors.textSecondary,
                       ),
                       Text(
                         '\$${tournament.entryFee!.toStringAsFixed(2)}',

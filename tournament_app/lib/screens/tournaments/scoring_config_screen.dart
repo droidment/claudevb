@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/scoring_config.dart';
+import '../../theme/theme.dart';
 
 /// Screen to configure phase-based scoring for a tournament
 class ScoringConfigScreen extends StatefulWidget {
@@ -106,10 +107,11 @@ class _ScoringConfigScreenState extends State<ScoringConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: Text('${isVolleyball ? "Volleyball" : "Pickleball"} Scoring'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(_config),
@@ -122,7 +124,7 @@ class _ScoringConfigScreenState extends State<ScoringConfigScreen> {
         children: [
           // Sport indicator
           Card(
-            color: isVolleyball ? Colors.orange.shade50 : Colors.green.shade50,
+            color: isVolleyball ? colors.volleyballPrimary.withValues(alpha: 0.15) : colors.pickleballPrimary.withValues(alpha: 0.15),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -130,7 +132,7 @@ class _ScoringConfigScreenState extends State<ScoringConfigScreen> {
                   Icon(
                     isVolleyball ? Icons.sports_volleyball : Icons.sports_tennis,
                     size: 32,
-                    color: isVolleyball ? Colors.orange : Colors.green,
+                    color: isVolleyball ? colors.volleyballPrimary : colors.pickleballPrimary,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -139,9 +141,10 @@ class _ScoringConfigScreenState extends State<ScoringConfigScreen> {
                       children: [
                         Text(
                           isVolleyball ? 'Volleyball Scoring' : 'Pickleball Scoring',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            color: colors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -151,7 +154,7 @@ class _ScoringConfigScreenState extends State<ScoringConfigScreen> {
                               : 'Configure points per game (7 or 11) and format for each phase',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.grey[600],
+                            color: colors.textSecondary,
                           ),
                         ),
                       ],
@@ -168,6 +171,7 @@ class _ScoringConfigScreenState extends State<ScoringConfigScreen> {
             'Quick Presets',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
                 ),
           ),
           const SizedBox(height: 8),
@@ -189,12 +193,13 @@ class _ScoringConfigScreenState extends State<ScoringConfigScreen> {
             'Phase-by-Phase Configuration',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
             'Customize scoring for each tournament phase',
-            style: TextStyle(color: Colors.grey[600]),
+            style: TextStyle(color: colors.textSecondary),
           ),
           const SizedBox(height: 16),
 
@@ -202,42 +207,45 @@ class _ScoringConfigScreenState extends State<ScoringConfigScreen> {
             TournamentPhase.poolPlay,
             _config.poolPlay,
             Icons.grid_view,
-            Colors.blue,
+            colors.accent,
           ),
           _buildPhaseCard(
             TournamentPhase.quarterFinals,
             _config.quarterFinals,
             Icons.looks_4,
-            Colors.purple,
+            colors.pickleballPrimary,
           ),
           _buildPhaseCard(
             TournamentPhase.semiFinals,
             _config.semiFinals,
             Icons.looks_two,
-            Colors.orange,
+            colors.volleyballPrimary,
           ),
           _buildPhaseCard(
             TournamentPhase.finals,
             _config.finals,
             Icons.emoji_events,
-            Colors.amber,
+            colors.warning,
           ),
 
           const SizedBox(height: 24),
 
           // Summary
           Card(
-            color: Colors.grey.shade100,
+            color: colors.cardBackgroundLight,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Configuration Summary',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: colors.textPrimary,
+                    ),
                   ),
-                  const Divider(),
+                  Divider(color: colors.divider),
                   _buildSummaryRow('Pool Play', _config.poolPlay),
                   _buildSummaryRow('Quarter-Finals', _config.quarterFinals),
                   _buildSummaryRow('Semi-Finals', _config.semiFinals),
@@ -265,8 +273,10 @@ class _ScoringConfigScreenState extends State<ScoringConfigScreen> {
     IconData icon,
     Color color,
   ) {
+    final colors = context.colors;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      color: colors.cardBackground,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -289,15 +299,16 @@ class _ScoringConfigScreenState extends State<ScoringConfigScreen> {
                     children: [
                       Text(
                         phase.displayName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
+                          color: colors.textPrimary,
                         ),
                       ),
                       Text(
                         currentScoring.displayName,
                         style: TextStyle(
-                          color: Colors.grey[600],
+                          color: colors.textSecondary,
                           fontSize: 13,
                         ),
                       ),
@@ -317,6 +328,7 @@ class _ScoringConfigScreenState extends State<ScoringConfigScreen> {
   }
 
   Widget _buildSummaryRow(String phase, PhaseScoring scoring) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -325,13 +337,16 @@ class _ScoringConfigScreenState extends State<ScoringConfigScreen> {
             width: 100,
             child: Text(
               phase,
-              style: TextStyle(color: Colors.grey[700]),
+              style: TextStyle(color: colors.textSecondary),
             ),
           ),
           Expanded(
             child: Text(
               scoring.displayName,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: colors.textPrimary,
+              ),
             ),
           ),
         ],
@@ -392,17 +407,20 @@ class _ScoringPickerSheetState extends State<_ScoringPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(24),
+      color: colors.cardBackground,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Configure ${widget.phase.displayName}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(height: 24),
@@ -410,7 +428,10 @@ class _ScoringPickerSheetState extends State<_ScoringPickerSheet> {
           // Number of sets/games
           Text(
             widget.isVolleyball ? 'Number of Sets' : 'Number of Games',
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              color: colors.textPrimary,
+            ),
           ),
           const SizedBox(height: 8),
           Row(
@@ -442,7 +463,10 @@ class _ScoringPickerSheetState extends State<_ScoringPickerSheet> {
           // Points per set
           Text(
             'Points to Win ${widget.isVolleyball ? "Set" : "Game"}',
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              color: colors.textPrimary,
+            ),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -466,7 +490,10 @@ class _ScoringPickerSheetState extends State<_ScoringPickerSheet> {
           if (_numberOfSets == 3 && widget.isVolleyball) ...[
             Text(
               'Tiebreak Set (3rd Set) Points',
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: colors.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -499,24 +526,27 @@ class _ScoringPickerSheetState extends State<_ScoringPickerSheet> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: colors.accentLight,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
-                const Icon(Icons.preview, color: Colors.blue),
+                Icon(Icons.preview, color: colors.accent),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Preview',
-                        style: TextStyle(fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: colors.textPrimary,
+                        ),
                       ),
                       Text(
                         _buildPreview(),
-                        style: TextStyle(color: Colors.blue.shade700),
+                        style: TextStyle(color: colors.accent),
                       ),
                     ],
                   ),
@@ -562,15 +592,16 @@ class _ScoringPickerSheetState extends State<_ScoringPickerSheet> {
     bool isSelected,
     VoidCallback onTap,
   ) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.shade50 : Colors.grey.shade100,
+          color: isSelected ? colors.accentLight : colors.searchBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Colors.blue : Colors.grey.shade300,
+            color: isSelected ? colors.accent : colors.divider,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -581,7 +612,7 @@ class _ScoringPickerSheetState extends State<_ScoringPickerSheet> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.blue : Colors.grey[700],
+                color: isSelected ? colors.accent : colors.textSecondary,
               ),
             ),
             const SizedBox(height: 4),
@@ -589,7 +620,7 @@ class _ScoringPickerSheetState extends State<_ScoringPickerSheet> {
               title,
               style: TextStyle(
                 fontSize: 12,
-                color: isSelected ? Colors.blue : Colors.grey[600],
+                color: isSelected ? colors.accent : colors.textSecondary,
               ),
             ),
           ],

@@ -4,6 +4,9 @@ import 'config/supabase_config.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'core/supabase_client.dart';
+import 'theme/theme_provider.dart';
+
+final themeProvider = ThemeProvider();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,18 +24,23 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tournament Scheduler',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
+    return ThemeProviderWidget(
+      themeProvider: themeProvider,
+      child: ListenableBuilder(
+        listenable: themeProvider,
+        builder: (context, _) {
+          return MaterialApp(
+            title: 'Tournament Scheduler',
+            debugShowCheckedModeBanner: false,
+            theme: themeProvider.themeData,
+            home: const AuthWrapper(),
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/home': (context) => const HomeScreen(),
+            },
+          );
+        },
       ),
-      home: const AuthWrapper(),
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/home': (context) => const HomeScreen(),
-      },
     );
   }
 }
@@ -53,6 +61,3 @@ class AuthWrapper extends StatelessWidget {
     );
   }
 }
-
-// A comment to trigger the workflow.
-

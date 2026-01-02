@@ -294,20 +294,98 @@ class TournamentService {
   }
 
   /// Remove a team from a tournament
-  Future<void> removeTeamFromTournament({
+  /// Returns true if removal was successful
+  /// Throws exception with details if removal fails
+  Future<bool> removeTeamFromTournament({
     required String tournamentId,
     required String teamId,
+    bool forceRemove = false,
   }) async {
     final user = supabase.auth.currentUser;
     if (user == null) {
       throw Exception('User must be logged in');
     }
 
-    await supabase
+    // First, check if the registration exists
+    final existingReg = await supabase
+        .from('tournament_registrations')
+        .select('id')
+        .eq('tournament_id', tournamentId)
+        .eq('team_id', teamId)
+        .maybeSingle();
+
+    if (existingReg == null) {
+      throw Exception('Team is not registered in this tournament');
+    }
+
+    // Check if there are matches involving this team
+    if (!forceRemove) {
+      final matchCount = await supabase
+          .from('matches')
+          .select('id')
+          .eq('tournament_id', tournamentId)
+          .or('team1_id.eq.$teamId,team2_id.eq.$teamId');
+
+      if ((matchCount as List).isNotEmpty) {
+        throw Exception(
+          'MATCHES_EXIST:${matchCount.length} matches involve this team. '
+          'Remove matches first or use force remove.',
+        );
+      }
+    }
+
+    // Perform the delete and verify it worked
+    final deletedRows = await supabase
         .from('tournament_registrations')
         .delete()
         .eq('tournament_id', tournamentId)
-        .eq('team_id', teamId);
+        .eq('team_id', teamId)
+        .select('id');
+
+    if ((deletedRows as List).isEmpty) {
+      // Check if user has permission
+      final tournament = await supabase
+          .from('tournaments')
+          .select('organizer_id')
+          .eq('id', tournamentId)
+          .single();
+
+      final isOrganizer = tournament['organizer_id'] == user.id;
+
+      final team = await supabase
+          .from('teams')
+          .select('captain_id')
+          .eq('id', teamId)
+          .single();
+
+      final isCaptain = team['captain_id'] == user.id;
+
+      if (!isOrganizer && !isCaptain) {
+        throw Exception(
+          'Permission denied. Only the tournament organizer or team captain can remove this team.',
+        );
+      }
+
+      throw Exception(
+        'Failed to remove team. Please check your permissions or try again.',
+      );
+    }
+
+    return true;
+  }
+
+  /// Check if a team has matches in a tournament
+  Future<int> getTeamMatchCount({
+    required String tournamentId,
+    required String teamId,
+  }) async {
+    final matches = await supabase
+        .from('matches')
+        .select('id')
+        .eq('tournament_id', tournamentId)
+        .or('team1_id.eq.$teamId,team2_id.eq.$teamId');
+
+    return (matches as List).length;
   }
 
   /// Update a team's registration (pool assignment, seed, lunch, etc.)

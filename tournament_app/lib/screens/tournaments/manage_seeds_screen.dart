@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/tournament_service.dart';
+import '../../theme/theme.dart';
 
 class ManageSeedsScreen extends StatefulWidget {
   final String tournamentId;
@@ -106,6 +107,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
   }
 
   Future<void> _saveAllSeeds() async {
+    final colors = context.colors;
     if (_seedChanges.isEmpty && _poolChanges.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -139,9 +141,9 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Seeds saved successfully'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Seeds saved successfully'),
+            backgroundColor: colors.success,
           ),
         );
       }
@@ -150,7 +152,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error saving seeds: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colors.error,
           ),
         );
       }
@@ -195,6 +197,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
   }
 
   void _clearAllSeeds() {
+    final colors = context.colors;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -206,7 +209,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: colors.error),
             onPressed: () {
               Navigator.pop(context);
               setState(() {
@@ -243,6 +246,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
   /// Assign pools using snake draft based on seeds
   /// e.g., 4 pools: 1->A, 2->B, 3->C, 4->D, 5->D, 6->C, 7->B, 8->A, 9->A, ...
   void _autoAssignPools() {
+    final colors = context.colors;
     // Check if all teams have seeds
     final unseededTeams = _teams.where((t) => t['seed_number'] == null).length;
     if (unseededTeams > 0) {
@@ -271,11 +275,11 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         int numberOfPools = suggestedPools;
 
         return StatefulBuilder(
-          builder: (context, setDialogState) {
+          builder: (dialogContext, setDialogState) {
             final teamsPerPool = (teamCount / numberOfPools).ceil();
             final poolNames = List.generate(
               numberOfPools,
@@ -290,7 +294,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
                 children: [
                   Text(
                     'Distribute $teamCount teams into pools using snake draft.\n'
-                    '(Seed 1→A, 2→B, 3→C, 4→D, 5→D, 6→C, ...)',
+                    '(Seed 1->A, 2->B, 3->C, 4->D, 5->D, 6->C, ...)',
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -317,7 +321,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
+                      color: colors.accentLight,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -327,17 +331,17 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
                           'Pool Preview:',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade700,
+                            color: colors.accent,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Pools ${poolNames.join(", ")}',
-                          style: TextStyle(color: Colors.blue.shade700),
+                          style: TextStyle(color: colors.accent),
                         ),
                         Text(
                           '~$teamsPerPool teams per pool',
-                          style: TextStyle(color: Colors.blue.shade700),
+                          style: TextStyle(color: colors.accent),
                         ),
                       ],
                     ),
@@ -346,12 +350,12 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.pop(dialogContext),
                   child: const Text('Cancel'),
                 ),
                 FilledButton(
                   onPressed: () {
-                    Navigator.pop(context);
+                    Navigator.pop(dialogContext);
                     _assignPoolsSnakeDraft(numberOfPools);
                   },
                   child: const Text('Assign Pools'),
@@ -365,6 +369,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
   }
 
   void _assignPoolsSnakeDraft(int numberOfPools) {
+    final colors = context.colors;
     setState(() {
       // Sort teams by seed
       final sortedTeams = List<Map<String, dynamic>>.from(_teams);
@@ -413,12 +418,13 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
         content: Text(
           'Assigned ${_teams.length} teams to $numberOfPools pools',
         ),
-        backgroundColor: Colors.blue,
+        backgroundColor: colors.accent,
       ),
     );
   }
 
   void _clearAllPools() {
+    final colors = context.colors;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -432,7 +438,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: colors.error),
             onPressed: () {
               Navigator.pop(context);
               setState(() {
@@ -455,7 +461,9 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -478,7 +486,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
                 label: Text(
                   '${_seedChanges.length + _poolChanges.length} changes',
                 ),
-                backgroundColor: Colors.orange.shade100,
+                backgroundColor: colors.warningLight,
               ),
             ),
           PopupMenuButton<String>(
@@ -518,24 +526,24 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
                 ),
               ),
               const PopupMenuDivider(),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'clear_seeds',
                 child: ListTile(
-                  leading: Icon(Icons.clear, color: Colors.red),
+                  leading: Icon(Icons.clear, color: colors.error),
                   title: Text(
                     'Clear All Seeds',
-                    style: TextStyle(color: Colors.red),
+                    style: TextStyle(color: colors.error),
                   ),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'clear_pools',
                 child: ListTile(
-                  leading: Icon(Icons.clear_all, color: Colors.red),
+                  leading: Icon(Icons.clear_all, color: colors.error),
                   title: Text(
                     'Clear All Pools',
-                    style: TextStyle(color: Colors.red),
+                    style: TextStyle(color: colors.error),
                   ),
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -552,12 +560,12 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
                 child: FilledButton.icon(
                   onPressed: _isSaving ? null : _saveAllSeeds,
                   icon: _isSaving
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: colors.textPrimary,
                           ),
                         )
                       : const Icon(Icons.save),
@@ -570,6 +578,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
   }
 
   Widget _buildBody() {
+    final colors = context.colors;
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -579,7 +588,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: colors.error),
             const SizedBox(height: 16),
             Text('Error: $_error'),
             const SizedBox(height: 16),
@@ -594,16 +603,18 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.group_off, size: 64, color: Colors.grey[400]),
+            Icon(Icons.group_off, size: 64, color: colors.textMuted),
             const SizedBox(height: 16),
             Text(
               'No teams registered',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: colors.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Add teams to the tournament first',
-              style: TextStyle(color: Colors.grey[600]),
+              style: TextStyle(color: colors.textSecondary),
             ),
           ],
         ),
@@ -616,15 +627,15 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
-          color: Colors.blue.shade50,
+          color: colors.accentLight,
           child: Row(
             children: [
-              Icon(Icons.info_outline, color: Colors.blue.shade700),
+              Icon(Icons.info_outline, color: colors.accent),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'Enter seed numbers directly in the boxes. Drag teams to reorder. Lower seed = stronger team.',
-                  style: TextStyle(color: Colors.blue.shade700),
+                  style: TextStyle(color: colors.accent),
                 ),
               ),
             ],
@@ -653,6 +664,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
   }
 
   Widget _buildTeamItem(Map<String, dynamic> registration, int index) {
+    final colors = context.colors;
     final teamData = registration['teams'] as Map<String, dynamic>?;
     if (teamData == null) {
       return const SizedBox.shrink(key: ValueKey('empty'));
@@ -668,7 +680,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
         registration['payment_status'] as String? ?? 'pending';
     final isPaid = paymentStatus == 'paid';
 
-    Color avatarColor = Colors.blue;
+    Color avatarColor = colors.accent;
     if (teamColor != null) {
       try {
         avatarColor = Color(int.parse(teamColor.replaceFirst('#', '0xFF')));
@@ -685,7 +697,7 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
     return Card(
       key: ValueKey(teamId),
       margin: const EdgeInsets.only(bottom: 8),
-      color: hasChange ? Colors.yellow.shade50 : null,
+      color: hasChange ? colors.warningLight : colors.cardBackground,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         child: Row(
@@ -693,9 +705,9 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
             // Drag handle
             ReorderableDragStartListener(
               index: index,
-              child: const Padding(
-                padding: EdgeInsets.all(8),
-                child: Icon(Icons.drag_handle, color: Colors.grey),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Icon(Icons.drag_handle, color: colors.textMuted),
               ),
             ),
             // Inline seed input
@@ -709,33 +721,33 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: Colors.amber.shade800,
+                  color: colors.warning,
                 ),
                 decoration: InputDecoration(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                   filled: true,
                   fillColor: seedNumber != null
-                      ? Colors.amber.shade100
-                      : Colors.grey.shade100,
+                      ? colors.warningLight
+                      : colors.searchBackground,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.amber.shade400),
+                    borderSide: BorderSide(color: colors.warning),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
                       color: seedNumber != null
-                          ? Colors.amber.shade400
-                          : Colors.grey.shade300,
+                          ? colors.warning
+                          : colors.divider,
                       width: seedNumber != null ? 2 : 1,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.amber.shade600, width: 2),
+                    borderSide: BorderSide(color: colors.warning, width: 2),
                   ),
                   hintText: '-',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  hintStyle: TextStyle(color: colors.textMuted),
                 ),
                 onChanged: (value) => _updateSeedFromController(teamId, value),
               ),
@@ -764,7 +776,10 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
                       Expanded(
                         child: Text(
                           teamName,
-                          style: const TextStyle(fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: colors.textPrimary,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -772,15 +787,15 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.green.shade100,
+                            color: colors.successLight,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
+                          child: Text(
                             'PAID',
                             style: TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.bold,
-                              color: Colors.green,
+                              color: colors.success,
                             ),
                           ),
                         ),
@@ -795,28 +810,28 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                               decoration: BoxDecoration(
-                                color: Colors.blue.shade100,
+                                color: colors.accentLight,
                                 borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: Colors.blue.shade300),
+                                border: Border.all(color: colors.accent),
                               ),
                               child: Text(
                                 'Pool $poolAssignment',
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blue.shade700,
+                                  color: colors.accent,
                                 ),
                               ),
                             ),
                             const SizedBox(width: 8),
                           ],
                           if (homeCity != null) ...[
-                            Icon(Icons.location_on, size: 12, color: Colors.grey[500]),
+                            Icon(Icons.location_on, size: 12, color: colors.textMuted),
                             const SizedBox(width: 2),
                             Expanded(
                               child: Text(
                                 homeCity,
-                                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                style: TextStyle(fontSize: 12, color: colors.textSecondary),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),

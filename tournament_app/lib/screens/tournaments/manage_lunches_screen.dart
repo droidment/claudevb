@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/tournament_registration.dart';
 import '../../services/tournament_service.dart';
+import '../../theme/theme.dart';
 
 class ManageLunchesScreen extends StatefulWidget {
   final String tournamentId;
@@ -67,6 +68,7 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
   }
 
   Future<void> _saveAllLunches() async {
+    final colors = context.colors;
     if (_lunchChanges.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -96,9 +98,9 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Lunch orders saved successfully'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Lunch orders saved successfully'),
+            backgroundColor: colors.success,
           ),
         );
       }
@@ -107,7 +109,7 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error saving: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colors.error,
           ),
         );
       }
@@ -253,7 +255,9 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: Text('Manage Lunches'),
         actions: [
@@ -267,13 +271,13 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.orange,
+                    color: colors.warning,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${_lunchChanges.length} unsaved',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: colors.isDark ? colors.textPrimary : Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -294,7 +298,7 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error, size: 64, color: Colors.red),
+                  Icon(Icons.error, size: 64, color: colors.error),
                   const SizedBox(height: 16),
                   Text('Error: $_error'),
                   const SizedBox(height: 16),
@@ -326,6 +330,7 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
   }
 
   Widget _buildSummaryCard() {
+    final colors = context.colors;
     final totalNonVeg = _getTotalNonVeg();
     final totalVeg = _getTotalVeg();
     final totalLunches = _getTotalLunches();
@@ -333,6 +338,7 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
 
     return Card(
       margin: const EdgeInsets.all(16),
+      color: colors.cardBackground,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -341,27 +347,30 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
               'Lunch Summary',
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colors.textPrimary,
+              ),
             ),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildSummaryItem(
-                  '🍗 Non-Veg',
+                  'Non-Veg',
                   totalNonVeg.toString(),
-                  Colors.brown,
+                  colors.volleyballPrimary,
                 ),
-                _buildSummaryItem('🥗 Veg', totalVeg.toString(), Colors.green),
+                _buildSummaryItem('Veg', totalVeg.toString(), colors.success),
                 _buildSummaryItem(
-                  '📦 Total',
+                  'Total',
                   totalLunches.toString(),
-                  Colors.blue,
+                  colors.accent,
                 ),
                 _buildSummaryItem(
-                  '💰 Revenue',
+                  'Revenue',
                   '\$${totalRevenue.toStringAsFixed(0)}',
-                  Colors.purple,
+                  colors.pickleballPrimary,
                 ),
               ],
             ),
@@ -372,6 +381,7 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
   }
 
   Widget _buildSummaryItem(String label, String value, Color color) {
+    final colors = context.colors;
     return Column(
       children: [
         Text(
@@ -383,12 +393,13 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
           ),
         ),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label, style: TextStyle(fontSize: 12, color: colors.textMuted)),
       ],
     );
   }
 
   Widget _buildTeamLunchCard(Map<String, dynamic> registration) {
+    final colors = context.colors;
     final teamData = registration['teams'] as Map<String, dynamic>?;
     final teamName = teamData?['name'] as String? ?? 'Unknown Team';
     final teamId = teamData?['id'] as String? ?? '';
@@ -420,10 +431,11 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: hasChanges ? 4 : 1,
+      color: colors.cardBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: hasChanges
-            ? BorderSide(color: Colors.orange, width: 2)
+            ? BorderSide(color: colors.warning, width: 2)
             : BorderSide.none,
       ),
       child: Padding(
@@ -437,9 +449,10 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
                 Expanded(
                   child: Text(
                     teamName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
+                      color: colors.textPrimary,
                     ),
                   ),
                 ),
@@ -449,15 +462,15 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: colors.accentLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     '\$${totalCost.toStringAsFixed(0)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
-                      color: Colors.blue,
+                      color: colors.accent,
                     ),
                   ),
                 ),
@@ -470,41 +483,44 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
                 Expanded(
                   child: _buildLunchCounter(
                     teamId,
-                    '🍗 Non-Veg',
+                    'Non-Veg',
                     nonveg,
                     'nonveg',
-                    Colors.brown,
+                    colors.volleyballPrimary,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildLunchCounter(
                     teamId,
-                    '🥗 Veg',
+                    'Veg',
                     veg,
                     'veg',
-                    Colors.green,
+                    colors.success,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildLunchCounter(
                     teamId,
-                    '🚫 No Need',
+                    'No Need',
                     noNeed,
                     'noNeed',
-                    Colors.grey,
+                    colors.textMuted,
                   ),
                 ),
               ],
             ),
-            const Divider(height: 24),
+            Divider(height: 24, color: colors.divider),
             // Payment Status
             Row(
               children: [
-                const Text(
+                Text(
                   'Payment Status:',
-                  style: TextStyle(fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: colors.textPrimary,
+                  ),
                 ),
                 const Spacer(),
                 _buildPaymentStatusSelector(teamId, paymentStatus),
@@ -523,9 +539,10 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
     String type,
     Color color,
   ) {
+    final colors = context.colors;
     return Column(
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        Text(label, style: TextStyle(fontSize: 12, color: colors.textSecondary)),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -533,7 +550,7 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
             IconButton(
               icon: const Icon(Icons.remove_circle_outline),
               iconSize: 28,
-              color: count > 0 ? color : Colors.grey[300],
+              color: count > 0 ? color : colors.textMuted,
               onPressed: count > 0
                   ? () => _updateLunchCount(teamId, type, -1)
                   : null,
@@ -596,13 +613,14 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
   }
 
   Widget _buildBottomBar() {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: colors.cardBackground,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: colors.divider,
             blurRadius: 4,
             offset: const Offset(0, -2),
           ),
@@ -633,12 +651,12 @@ class _ManageLunchesScreenState extends State<ManageLunchesScreen> {
                     ? _saveAllLunches
                     : null,
                 icon: _isSaving
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: colors.textPrimary,
                         ),
                       )
                     : const Icon(Icons.save),

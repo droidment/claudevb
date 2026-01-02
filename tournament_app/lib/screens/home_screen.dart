@@ -2,23 +2,11 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/match_service.dart';
 import '../models/user_profile.dart';
+import '../theme/theme.dart';
 import 'tournaments/organize_screen.dart';
 import 'tournaments/tournaments_list_screen.dart';
 import 'tournaments/join_by_invite_screen.dart';
 import 'teams/teams_list_screen.dart';
-
-// Dark theme colors
-class _HomeColors {
-  static const Color background = Color(0xFF0D1117);
-  static const Color cardBackground = Color(0xFF161B22);
-  static const Color cardBackgroundLight = Color(0xFF1C2128);
-  static const Color accent = Color(0xFF58A6FF);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF8B949E);
-  static const Color textMuted = Color(0xFF6E7681);
-  static const Color success = Color(0xFF3FB950);
-  static const Color warning = Color(0xFFD29922);
-}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -84,11 +72,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleLogout() async {
+    final colors = context.colors;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        backgroundColor: colors.cardBackground,
+        title: Text('Logout', style: TextStyle(color: colors.textPrimary)),
+        content: Text('Are you sure you want to logout?', style: TextStyle(color: colors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -165,8 +155,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeContent() {
+    final colors = context.colors;
     return Container(
-      color: _HomeColors.background,
+      color: colors.background,
       child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -176,17 +167,17 @@ class _HomeScreenState extends State<HomeScreen> {
               // Welcome header
               Text(
                 'Welcome back, ${_userProfile?.fullName?.split(' ').first ?? 'Coach'}',
-                style: const TextStyle(
-                  color: _HomeColors.textPrimary,
+                style: TextStyle(
+                  color: colors.textPrimary,
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Ready for the next game?',
                 style: TextStyle(
-                  color: _HomeColors.textSecondary,
+                  color: colors.textSecondary,
                   fontSize: 16,
                 ),
               ),
@@ -198,10 +189,10 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 28),
 
               // Quick Actions section
-              const Text(
+              Text(
                 'QUICK ACTIONS',
                 style: TextStyle(
-                  color: _HomeColors.textSecondary,
+                  color: colors.textSecondary,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1.2,
@@ -212,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
               // Join Private Tournament card
               _buildQuickActionCard(
                 icon: Icons.vpn_key_outlined,
-                iconColor: _HomeColors.accent,
+                iconColor: colors.accent,
                 title: 'Join Private Tournament',
                 subtitle: 'Enter a code to join an existing bracket',
                 imagePath: 'lock',
@@ -230,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (_userProfile?.isCaptain == true) ...[
                 _buildQuickActionCard(
                   icon: Icons.groups_outlined,
-                  iconColor: _HomeColors.accent,
+                  iconColor: colors.accent,
                   title: 'Manage Teams',
                   subtitle: 'Edit rosters and player stats',
                   imagePath: 'teams',
@@ -249,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (_userProfile?.isOrganizer == true) ...[
                 _buildQuickActionCard(
                   icon: Icons.emoji_events_outlined,
-                  iconColor: _HomeColors.accent,
+                  iconColor: colors.accent,
                   title: 'Create Tournament',
                   subtitle: 'Set up brackets, rules & schedules',
                   imagePath: 'trophy',
@@ -268,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
               // Discover Tournaments card
               _buildQuickActionCard(
                 icon: Icons.explore_outlined,
-                iconColor: _HomeColors.accent,
+                iconColor: colors.accent,
                 title: 'Discover Tournaments',
                 subtitle: 'Find public tournaments near you',
                 imagePath: 'discover',
@@ -279,10 +270,10 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 28),
 
               // Recent Activity section
-              const Text(
+              Text(
                 'RECENT ACTIVITY',
                 style: TextStyle(
-                  color: _HomeColors.textSecondary,
+                  color: colors.textSecondary,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1.2,
@@ -302,6 +293,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildUpcomingMatchCard() {
+    final colors = context.colors;
     final team1 = _upcomingMatch!['team1'] as Map<String, dynamic>?;
     final team2 = _upcomingMatch!['team2'] as Map<String, dynamic>?;
     final team1Name = team1?['name'] as String? ?? 'Team 1';
@@ -325,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: _HomeColors.cardBackground,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -338,12 +330,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 14, color: _HomeColors.success),
+                      Icon(Icons.calendar_today, size: 14, color: colors.success),
                       const SizedBox(width: 6),
                       Text(
                         'UPCOMING',
                         style: TextStyle(
-                          color: _HomeColors.success,
+                          color: colors.success,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
@@ -354,8 +346,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 10),
                   Text(
                     '$team1Name vs. $team2Name',
-                    style: const TextStyle(
-                      color: _HomeColors.textPrimary,
+                    style: TextStyle(
+                      color: colors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -363,8 +355,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 6),
                   Text(
                     '$timeDisplay • $venue',
-                    style: const TextStyle(
-                      color: _HomeColors.textSecondary,
+                    style: TextStyle(
+                      color: colors.textSecondary,
                       fontSize: 14,
                     ),
                   ),
@@ -378,13 +370,13 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 100,
             margin: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: _HomeColors.cardBackgroundLight,
+              color: colors.cardBackgroundLight,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.sports_volleyball,
               size: 48,
-              color: _HomeColors.textMuted,
+              color: colors.textMuted,
             ),
           ),
         ],
@@ -393,9 +385,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNoUpcomingMatchCard() {
+    final colors = context.colors;
     return Container(
       decoration: BoxDecoration(
-        color: _HomeColors.cardBackground,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -408,12 +401,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 14, color: _HomeColors.textMuted),
+                      Icon(Icons.calendar_today, size: 14, color: colors.textMuted),
                       const SizedBox(width: 6),
                       Text(
                         'NO UPCOMING',
                         style: TextStyle(
-                          color: _HomeColors.textMuted,
+                          color: colors.textMuted,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
@@ -422,19 +415,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Text(
+                  Text(
                     'No matches scheduled',
                     style: TextStyle(
-                      color: _HomeColors.textPrimary,
+                      color: colors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
+                  Text(
                     'Join a tournament to see upcoming matches',
                     style: TextStyle(
-                      color: _HomeColors.textSecondary,
+                      color: colors.textSecondary,
                       fontSize: 14,
                     ),
                   ),
@@ -447,13 +440,13 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 100,
             margin: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: _HomeColors.cardBackgroundLight,
+              color: colors.cardBackgroundLight,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.sports_volleyball,
               size: 48,
-              color: _HomeColors.textMuted,
+              color: colors.textMuted,
             ),
           ),
         ],
@@ -470,6 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required VoidCallback onTap,
     bool highlighted = false,
   }) {
+    final colors = context.colors;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -477,10 +471,10 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(
-            color: _HomeColors.cardBackground,
+            color: colors.cardBackground,
             borderRadius: BorderRadius.circular(16),
             border: highlighted
-                ? Border.all(color: _HomeColors.accent.withValues(alpha: 0.5), width: 1)
+                ? Border.all(color: colors.accent.withValues(alpha: 0.5), width: 1)
                 : null,
           ),
           child: Row(
@@ -498,8 +492,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Text(
                               title,
-                              style: const TextStyle(
-                                color: _HomeColors.textPrimary,
+                              style: TextStyle(
+                                color: colors.textPrimary,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -507,8 +501,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 4),
                             Text(
                               subtitle,
-                              style: const TextStyle(
-                                color: _HomeColors.textSecondary,
+                              style: TextStyle(
+                                color: colors.textSecondary,
                                 fontSize: 13,
                               ),
                             ),
@@ -525,7 +519,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 80,
                 margin: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: _HomeColors.cardBackgroundLight,
+                  color: colors.cardBackgroundLight,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: _buildActionImage(imagePath),
@@ -538,54 +532,56 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildActionImage(String imagePath) {
+    final colors = context.colors;
     IconData iconData;
     Color iconColor;
 
     switch (imagePath) {
       case 'lock':
         iconData = Icons.lock_outline;
-        iconColor = _HomeColors.accent;
+        iconColor = colors.accent;
         break;
       case 'teams':
         iconData = Icons.groups;
-        iconColor = _HomeColors.warning;
+        iconColor = colors.warning;
         break;
       case 'trophy':
         iconData = Icons.emoji_events;
-        iconColor = _HomeColors.warning;
+        iconColor = colors.warning;
         break;
       case 'discover':
         iconData = Icons.explore;
-        iconColor = _HomeColors.success;
+        iconColor = colors.success;
         break;
       default:
         iconData = Icons.sports_volleyball;
-        iconColor = _HomeColors.textMuted;
+        iconColor = colors.textMuted;
     }
 
     return Icon(iconData, size: 36, color: iconColor);
   }
 
   Widget _buildEmptyActivityCard() {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: _HomeColors.cardBackground,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Center(
+      child: Center(
         child: Column(
           children: [
             Icon(
               Icons.history,
               size: 40,
-              color: _HomeColors.textMuted,
+              color: colors.textMuted,
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Text(
               'No recent activity',
               style: TextStyle(
-                color: _HomeColors.textSecondary,
+                color: colors.textSecondary,
                 fontSize: 14,
               ),
             ),
@@ -596,6 +592,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildActivityItem(Map<String, dynamic> activity) {
+    final colors = context.colors;
     final team1 = activity['team1'] as Map<String, dynamic>?;
     final team2 = activity['team2'] as Map<String, dynamic>?;
     final team1Name = team1?['name'] as String? ?? 'Team 1';
@@ -609,7 +606,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final winnerName = team1Won ? team1Name : team2Name;
     final winnerColor = team1?['team_color'] as String? ?? team2?['team_color'] as String?;
 
-    Color avatarColor = _HomeColors.accent;
+    Color avatarColor = colors.accent;
     if (winnerColor != null) {
       try {
         avatarColor = Color(int.parse(winnerColor.replaceFirst('#', '0xFF')));
@@ -620,7 +617,7 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: _HomeColors.cardBackground,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -652,8 +649,8 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   '$team1Name vs $team2Name',
-                  style: const TextStyle(
-                    color: _HomeColors.textPrimary,
+                  style: TextStyle(
+                    color: colors.textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -662,7 +659,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   '$winnerName won',
                   style: TextStyle(
-                    color: _HomeColors.success,
+                    color: colors.success,
                     fontSize: 13,
                   ),
                 ),
@@ -673,13 +670,13 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: _HomeColors.cardBackgroundLight,
+              color: colors.cardBackgroundLight,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               '$team1SetsWon - $team2SetsWon',
-              style: const TextStyle(
-                color: _HomeColors.textPrimary,
+              style: TextStyle(
+                color: colors.textPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
@@ -703,8 +700,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProfileContent() {
+    final colors = context.colors;
     return Container(
-      color: _HomeColors.background,
+      color: colors.background,
       child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -716,17 +714,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 100,
                 height: 100,
                 decoration: BoxDecoration(
-                  color: _HomeColors.accent.withValues(alpha: 0.2),
+                  color: colors.accent.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
-                  border: Border.all(color: _HomeColors.accent, width: 3),
+                  border: Border.all(color: colors.accent, width: 3),
                 ),
                 child: Center(
                   child: Text(
                     _userProfile?.fullName?.substring(0, 1).toUpperCase() ?? 'U',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
-                      color: _HomeColors.accent,
+                      color: colors.accent,
                     ),
                   ),
                 ),
@@ -734,25 +732,25 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 20),
               Text(
                 _userProfile?.fullName ?? 'User',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: _HomeColors.textPrimary,
+                  color: colors.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 _userProfile?.email ?? '',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: _HomeColors.textSecondary,
+                  color: colors.textSecondary,
                 ),
               ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: _HomeColors.accent.withValues(alpha: 0.2),
+                  color: colors.accent.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -761,10 +759,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       : _userProfile?.role == 'organizer'
                           ? 'Tournament Organizer'
                           : 'User',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: _HomeColors.accent,
+                    color: colors.accent,
                   ),
                 ),
               ),
@@ -773,26 +771,38 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: _HomeColors.cardBackground,
+                    color: colors.cardBackground,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.phone, size: 20, color: _HomeColors.textSecondary),
+                      Icon(Icons.phone, size: 20, color: colors.textSecondary),
                       const SizedBox(width: 8),
                       Text(
                         _userProfile!.phone!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: _HomeColors.textPrimary,
+                          color: colors.textPrimary,
                         ),
                       ),
                     ],
                   ),
                 ),
               ],
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
+
+              // Theme selector
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: colors.cardBackground,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const ThemeSelectorTile(),
+              ),
+
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -800,8 +810,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: const Icon(Icons.logout),
                   label: const Text('Logout'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
+                    foregroundColor: colors.error,
+                    side: BorderSide(color: colors.error),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
@@ -815,9 +825,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: _HomeColors.background,
+        backgroundColor: colors.background,
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -827,12 +839,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final showAppBar = currentLabel != 'Home';
 
     return Scaffold(
-      backgroundColor: _HomeColors.background,
+      backgroundColor: colors.background,
       appBar: showAppBar
           ? AppBar(
               title: Text(currentLabel),
-              backgroundColor: _HomeColors.cardBackground,
-              foregroundColor: _HomeColors.textPrimary,
+              backgroundColor: colors.cardBackground,
+              foregroundColor: colors.textPrimary,
               actions: currentLabel == 'Profile'
                   ? [
                       IconButton(
@@ -843,18 +855,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   : null,
             )
           : AppBar(
-              backgroundColor: _HomeColors.background,
+              backgroundColor: colors.background,
               elevation: 0,
-              title: const Text(
+              title: Text(
                 'Tournament Hub',
                 style: TextStyle(
-                  color: _HomeColors.textPrimary,
+                  color: colors.textPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.notifications_outlined, color: _HomeColors.accent),
+                  icon: Icon(Icons.notifications_outlined, color: colors.accent),
                   onPressed: () {},
                 ),
                 IconButton(
@@ -863,9 +875,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 32,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: _HomeColors.accent, width: 2),
+                      border: Border.all(color: colors.accent, width: 2),
                     ),
-                    child: const Icon(Icons.person_outline, color: _HomeColors.accent, size: 18),
+                    child: Icon(Icons.person_outline, color: colors.accent, size: 18),
                   ),
                   onPressed: () {
                     final profileIndex = _getNavigationDestinations()
@@ -880,8 +892,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
       body: _getSelectedScreen(),
       bottomNavigationBar: NavigationBar(
-        backgroundColor: _HomeColors.cardBackground,
-        indicatorColor: _HomeColors.accent.withValues(alpha: 0.2),
+        backgroundColor: colors.cardBackground,
+        indicatorColor: colors.accent.withValues(alpha: 0.2),
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
           setState(() => _selectedIndex = index);

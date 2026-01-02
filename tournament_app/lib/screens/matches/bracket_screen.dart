@@ -3,6 +3,7 @@ import '../../models/match.dart';
 import '../../models/scoring_format.dart';
 import '../../models/scoring_config.dart';
 import '../../services/match_service.dart';
+import '../../theme/theme.dart';
 import 'match_detail_screen.dart';
 import 'tournament_results_screen.dart';
 
@@ -92,7 +93,7 @@ class _BracketScreenState extends State<BracketScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading brackets: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.colors.error,
           ),
         );
       }
@@ -109,7 +110,9 @@ class _BracketScreenState extends State<BracketScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,7 +124,7 @@ class _BracketScreenState extends State<BracketScreen>
             ),
           ],
         ),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: colors.cardBackground,
         bottom: _tiers.length > 1
             ? TabBar(
                 controller: _tabController,
@@ -152,6 +155,7 @@ class _BracketScreenState extends State<BracketScreen>
   }
 
   Widget _buildBody() {
+    final colors = context.colors;
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -161,19 +165,19 @@ class _BracketScreenState extends State<BracketScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.account_tree, size: 64, color: Colors.grey[400]),
+            Icon(Icons.account_tree, size: 64, color: colors.textMuted),
             const SizedBox(height: 16),
             Text(
               'No bracket matches yet',
               style: TextStyle(
                 fontSize: 18,
-                color: Colors.grey[600],
+                color: colors.textSecondary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Complete pool play to generate tier brackets',
-              style: TextStyle(color: Colors.grey[500]),
+              style: TextStyle(color: colors.textMuted),
             ),
           ],
         ),
@@ -191,13 +195,14 @@ class _BracketScreenState extends State<BracketScreen>
   }
 
   Widget _buildTierBracket(String tier) {
+    final colors = context.colors;
     final matches = _matchesByTier[tier] ?? [];
 
     if (matches.isEmpty) {
       return Center(
         child: Text(
           'No matches in $tier tier',
-          style: TextStyle(color: Colors.grey[600]),
+          style: TextStyle(color: colors.textSecondary),
         ),
       );
     }
@@ -282,8 +287,8 @@ class _BracketScreenState extends State<BracketScreen>
             ),
             child: Text(
               roundName,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.colors.textPrimary,
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),
@@ -306,6 +311,7 @@ class _BracketScreenState extends State<BracketScreen>
   }
 
   Widget _buildMatchCard(Map<String, dynamic> matchData) {
+    final colors = context.colors;
     final match = Match.fromJson(matchData);
     final team1 = matchData['team1'] as Map<String, dynamic>?;
     final team2 = matchData['team2'] as Map<String, dynamic>?;
@@ -321,10 +327,10 @@ class _BracketScreenState extends State<BracketScreen>
       onTap: () => _navigateToMatchDetail(matchData),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colors.cardBackground,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isComplete ? Colors.green : Colors.grey.shade300,
+            color: isComplete ? colors.success : colors.divider,
             width: isComplete ? 2 : 1,
           ),
           boxShadow: [
@@ -347,7 +353,7 @@ class _BracketScreenState extends State<BracketScreen>
             ),
             Container(
               height: 1,
-              color: Colors.grey.shade200,
+              color: colors.divider,
             ),
             // Team 2
             _buildTeamRow(
@@ -370,10 +376,11 @@ class _BracketScreenState extends State<BracketScreen>
     bool isComplete,
     bool isTopTeam,
   ) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: isWinner ? Colors.green.shade50 : null,
+        color: isWinner ? colors.successLight : null,
         borderRadius: BorderRadius.only(
           topLeft: isTopTeam ? const Radius.circular(7) : Radius.zero,
           topRight: isTopTeam ? const Radius.circular(7) : Radius.zero,
@@ -384,9 +391,9 @@ class _BracketScreenState extends State<BracketScreen>
       child: Row(
         children: [
           if (isWinner)
-            const Padding(
-              padding: EdgeInsets.only(right: 6),
-              child: Icon(Icons.emoji_events, size: 16, color: Colors.amber),
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: Icon(Icons.emoji_events, size: 16, color: colors.warning),
             ),
           Expanded(
             child: Text(
@@ -394,7 +401,7 @@ class _BracketScreenState extends State<BracketScreen>
               style: TextStyle(
                 fontWeight: isWinner ? FontWeight.bold : FontWeight.normal,
                 fontSize: 13,
-                color: teamName == 'TBD' ? Colors.grey : null,
+                color: teamName == 'TBD' ? colors.textMuted : colors.textPrimary,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -403,7 +410,7 @@ class _BracketScreenState extends State<BracketScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: isWinner ? Colors.green : Colors.grey.shade200,
+                color: isWinner ? colors.success : colors.divider,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -411,7 +418,7 @@ class _BracketScreenState extends State<BracketScreen>
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
-                  color: isWinner ? Colors.white : Colors.grey.shade700,
+                  color: isWinner ? colors.textPrimary : colors.textSecondary,
                 ),
               ),
             ),
@@ -464,7 +471,7 @@ class _BracketScreenState extends State<BracketScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Advanced winners from $advancedCount matches'),
-            backgroundColor: Colors.green,
+            backgroundColor: context.colors.success,
           ),
         );
         _loadBracketMatches();
@@ -474,7 +481,7 @@ class _BracketScreenState extends State<BracketScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error advancing winners: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.colors.error,
           ),
         );
       }
@@ -500,15 +507,16 @@ class _BracketScreenState extends State<BracketScreen>
   }
 
   Color _getTierColor(String tier) {
+    final colors = context.colors;
     switch (tier) {
       case 'Advanced':
-        return Colors.green;
+        return colors.success;
       case 'Intermediate':
-        return Colors.blue;
+        return colors.accent;
       case 'Recreational':
-        return Colors.orange;
+        return colors.warning;
       default:
-        return Colors.grey;
+        return colors.textMuted;
     }
   }
 }

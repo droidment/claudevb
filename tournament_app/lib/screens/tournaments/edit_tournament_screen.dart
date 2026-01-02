@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import '../../models/tournament.dart';
 import '../../services/tournament_service.dart';
+import '../../theme/theme.dart';
 
 class EditTournamentScreen extends StatefulWidget {
   final Tournament tournament;
@@ -154,6 +155,7 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
   }
 
   Future<void> _getCurrentLocation() async {
+    final colors = context.colors;
     setState(() => _isGettingLocation = true);
 
     try {
@@ -180,9 +182,9 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Location set successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Location set successfully!'),
+            backgroundColor: colors.success,
           ),
         );
       }
@@ -191,7 +193,7 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error getting location: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colors.error,
           ),
         );
       }
@@ -201,12 +203,13 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
   }
 
   Future<void> _geocodeAddress() async {
+    final colors = context.colors;
     final address = _locationController.text.trim();
     if (address.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a location first'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: const Text('Please enter a location first'),
+          backgroundColor: colors.warning,
         ),
       );
       return;
@@ -224,9 +227,9 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location coordinates set from address!'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Location coordinates set from address!'),
+              backgroundColor: colors.success,
             ),
           );
         }
@@ -234,9 +237,9 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not find coordinates for this address'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: const Text('Could not find coordinates for this address'),
+            backgroundColor: colors.error,
           ),
         );
       }
@@ -248,6 +251,7 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
   Future<void> _updateTournament() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final colors = context.colors;
     setState(() => _isLoading = true);
 
     try {
@@ -284,9 +288,9 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tournament updated successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Tournament updated successfully!'),
+            backgroundColor: colors.success,
           ),
         );
         Navigator.of(context).pop(true);
@@ -296,7 +300,7 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error updating tournament: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colors.error,
           ),
         );
       }
@@ -309,10 +313,11 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: const Text('Edit Tournament'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Form(
         key: _formKey,
@@ -396,7 +401,7 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, color: Colors.blue),
+                    Icon(Icons.info_outline, color: colors.accent),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -535,35 +540,36 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
                 },
                 secondary: Icon(
                   _isPublic ? Icons.public : Icons.lock,
-                  color: _isPublic ? Colors.green : Colors.orange,
+                  color: _isPublic ? colors.success : colors.warning,
                 ),
               ),
             ),
             if (!_isPublic && widget.tournament.inviteCode != null) ...[
               const SizedBox(height: 8),
               Card(
-                color: Colors.orange.shade50,
+                color: colors.warningLight,
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
-                      const Icon(Icons.vpn_key, color: Colors.orange),
+                      Icon(Icons.vpn_key, color: colors.warning),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Current Invite Code:',
-                              style: TextStyle(fontSize: 12),
+                              style: TextStyle(fontSize: 12, color: colors.textPrimary),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               widget.tournament.inviteCode!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 2,
+                                color: colors.textPrimary,
                               ),
                             ),
                           ],
@@ -585,14 +591,14 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.my_location, color: Colors.blue),
-                        SizedBox(width: 8),
+                        Icon(Icons.my_location, color: colors.accent),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Set coordinates to enable nearby tournament search',
-                            style: TextStyle(fontSize: 13),
+                            style: TextStyle(fontSize: 13, color: colors.textPrimary),
                           ),
                         ),
                       ],
@@ -628,17 +634,17 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.green.shade50,
+                          color: colors.successLight,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            Icon(Icons.check_circle, color: colors.success, size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 'Coordinates: ${_latitude!.toStringAsFixed(6)}, ${_longitude!.toStringAsFixed(6)}',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: colors.textPrimary),
                               ),
                             ),
                             IconButton(
@@ -704,11 +710,12 @@ class _EditTournamentScreenState extends State<EditTournamentScreen> {
   }
 
   Widget _buildSectionHeader(String title) {
+    final colors = context.colors;
     return Text(
       title,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.bold,
-        color: Theme.of(context).colorScheme.primary,
+        color: colors.accent,
       ),
     );
   }

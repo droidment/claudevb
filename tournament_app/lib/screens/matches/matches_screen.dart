@@ -3,6 +3,7 @@ import '../../models/match.dart';
 import '../../models/scoring_format.dart';
 import '../../models/scoring_config.dart';
 import '../../services/match_service.dart';
+import '../../theme/theme.dart';
 import 'match_detail_screen.dart';
 
 class MatchesScreen extends StatefulWidget {
@@ -115,7 +116,9 @@ class _MatchesScreenState extends State<MatchesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,13 +130,14 @@ class _MatchesScreenState extends State<MatchesScreen> {
             ),
           ],
         ),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: colors.cardBackground,
       ),
       body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
+    final colors = context.colors;
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -143,7 +147,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: colors.error),
             const SizedBox(height: 16),
             Text('Error: $_error'),
             const SizedBox(height: 16),
@@ -161,13 +165,13 @@ class _MatchesScreenState extends State<MatchesScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.calendar_today, size: 64, color: Colors.grey[400]),
+            Icon(Icons.calendar_today, size: 64, color: colors.textMuted),
             const SizedBox(height: 16),
             Text(
               'No matches scheduled yet',
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color: colors.textSecondary,
               ),
             ),
           ],
@@ -264,6 +268,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
   }
 
   Widget _buildMatchCard(Map<String, dynamic> matchData) {
+    final colors = context.colors;
     final match = Match.fromJson(matchData);
     final team1Data = matchData['team1'] as Map<String, dynamic>?;
     final team2Data = matchData['team2'] as Map<String, dynamic>?;
@@ -288,7 +293,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
                   Text(
                     'Match #${match.matchNumber ?? '?'}',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Colors.grey[600],
+                      color: colors.textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -317,7 +322,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
                             'Sets won: ${match.team1SetsWon}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: colors.textSecondary,
                             ),
                           ),
                       ],
@@ -333,8 +338,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: match.isComplete
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.grey,
+                            ? colors.accent
+                            : colors.textMuted,
                       ),
                     ),
                   ),
@@ -356,7 +361,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
                             'Sets won: ${match.team2SetsWon}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: colors.textSecondary,
                             ),
                             textAlign: TextAlign.right,
                           ),
@@ -371,25 +376,25 @@ class _MatchesScreenState extends State<MatchesScreen> {
               Row(
                 children: [
                   if (match.scheduledTime != null) ...[
-                    Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
+                    Icon(Icons.schedule, size: 16, color: colors.textSecondary),
                     const SizedBox(width: 4),
                     Text(
                       _formatDateTime(match.scheduledTime!),
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: colors.textSecondary,
                       ),
                     ),
                   ],
                   if (match.courtNumber != null) ...[
                     const SizedBox(width: 16),
-                    Icon(Icons.sports_volleyball, size: 16, color: Colors.grey[600]),
+                    Icon(Icons.sports_volleyball, size: 16, color: colors.textSecondary),
                     const SizedBox(width: 4),
                     Text(
                       'Court ${match.courtNumber}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: colors.textSecondary,
                       ),
                     ),
                   ],
@@ -403,24 +408,25 @@ class _MatchesScreenState extends State<MatchesScreen> {
   }
 
   Widget _buildStatusBadge(MatchStatus status) {
+    final colors = context.colors;
     Color color;
     IconData icon;
 
     switch (status) {
       case MatchStatus.scheduled:
-        color = Colors.blue;
+        color = colors.accent;
         icon = Icons.schedule;
         break;
       case MatchStatus.inProgress:
-        color = Colors.orange;
+        color = colors.warning;
         icon = Icons.play_circle;
         break;
       case MatchStatus.completed:
-        color = Colors.green;
+        color = colors.success;
         icon = Icons.check_circle;
         break;
       case MatchStatus.cancelled:
-        color = Colors.red;
+        color = colors.error;
         icon = Icons.cancel;
         break;
     }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+import '../../theme/theme.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -49,12 +50,13 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
       if (mounted) {
+        final colors = context.colors;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
+          SnackBar(
+            content: const Text(
               'Account created successfully! Please check your email to verify.',
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: colors.success,
           ),
         );
         Navigator.of(context).pop();
@@ -78,10 +80,11 @@ class _SignupScreenState extends State<SignupScreen> {
           errorMessage = 'Signup failed: ${e.toString()}';
         }
 
+        final colors = context.colors;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
-            backgroundColor: Colors.red,
+            backgroundColor: colors.error,
             duration: const Duration(seconds: 5),
           ),
         );
@@ -95,7 +98,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(title: const Text('Create Account')),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -105,10 +110,10 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
+                Icon(
                   Icons.sports_volleyball,
                   size: 60,
-                  color: Colors.blue,
+                  color: colors.accent,
                 ),
                 const SizedBox(height: 24),
                 Text(

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import '../../models/team.dart';
 import '../../services/team_service.dart';
+import '../../theme/theme.dart';
 
 class ImportTeamsScreen extends StatefulWidget {
   const ImportTeamsScreen({super.key});
@@ -161,12 +162,13 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
   int get _paidCount => _filteredTeams.where((t) => t.paid).length;
 
   Future<void> _importSelectedTeams() async {
+    final colors = context.colors;
     final selectedTeams = _filteredTeams.where((t) => t.selected).toList();
     if (selectedTeams.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No teams selected for import'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: const Text('No teams selected for import'),
+          backgroundColor: colors.warning,
         ),
       );
       return;
@@ -205,7 +207,7 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Successfully imported ${imported.length} teams!'),
-            backgroundColor: Colors.green,
+            backgroundColor: colors.success,
           ),
         );
         Navigator.pop(context, true);
@@ -215,7 +217,7 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error importing teams: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colors.error,
           ),
         );
       }
@@ -228,10 +230,11 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: const Text('Import Teams from CSV'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           if (_filteredTeams.isNotEmpty)
             TextButton.icon(
@@ -268,6 +271,8 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
   }
 
   Widget _buildBody() {
+    final colors = context.colors;
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -277,7 +282,7 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: colors.error),
             const SizedBox(height: 16),
             Text(_error!, textAlign: TextAlign.center),
             const SizedBox(height: 16),
@@ -295,18 +300,20 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.upload_file, size: 100, color: Colors.grey[400]),
+            Icon(Icons.upload_file, size: 100, color: colors.textMuted),
             const SizedBox(height: 24),
             Text(
               'Import Teams from CSV',
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: colors.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Select a CSV file to import teams',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colors.textSecondary,
+              ),
             ),
             const SizedBox(height: 16),
             _buildExpectedFormatCard(),
@@ -320,7 +327,7 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
         // Category filter and stats
         Container(
           padding: const EdgeInsets.all(16),
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          color: colors.cardBackground,
           child: Column(
             children: [
               Row(
@@ -359,14 +366,14 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
                   _buildStatChip(
                     'Total',
                     _filteredTeams.length.toString(),
-                    Colors.blue,
+                    colors.accent,
                   ),
                   _buildStatChip(
                     'Selected',
                     _selectedCount.toString(),
-                    Colors.green,
+                    colors.success,
                   ),
-                  _buildStatChip('Paid', _paidCount.toString(), Colors.orange),
+                  _buildStatChip('Paid', _paidCount.toString(), colors.warning),
                 ],
               ),
             ],
@@ -382,7 +389,7 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
           tristate: true,
           onChanged: _toggleSelectAll,
         ),
-        const Divider(height: 1),
+        Divider(height: 1, color: colors.divider),
 
         // Teams list
         Expanded(
@@ -425,8 +432,10 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
   }
 
   Widget _buildTeamTile(CsvTeamImport team) {
+    final colors = context.colors;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      color: colors.cardBackground,
       child: CheckboxListTile(
         value: team.selected,
         onChanged: (value) {
@@ -437,22 +446,25 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
             Expanded(
               child: Text(
                 team.teamName,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                ),
               ),
             ),
             if (team.paid)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade100,
+                  color: colors.successLight,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text(
+                child: Text(
                   'PAID',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: Colors.green,
+                    color: colors.success,
                   ),
                 ),
               ),
@@ -461,16 +473,19 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Captain: ${team.captainName}'),
+            Text(
+              'Captain: ${team.captainName}',
+              style: TextStyle(color: colors.textSecondary),
+            ),
             if (team.captainPhone != null)
               Text(
                 'Phone: ${team.captainPhone}',
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                style: TextStyle(color: colors.textMuted, fontSize: 12),
               ),
             if (team.captainEmail != null)
               Text(
                 'Email: ${team.captainEmail}',
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                style: TextStyle(color: colors.textMuted, fontSize: 12),
               ),
             if (team.specialRequests != null &&
                 team.specialRequests!.isNotEmpty)
@@ -478,15 +493,15 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
                 margin: const EdgeInsets.only(top: 4),
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.yellow.shade50,
+                  color: colors.warningLight,
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.yellow.shade200),
+                  border: Border.all(color: colors.warning.withOpacity(0.3)),
                 ),
                 child: Text(
                   'Note: ${team.specialRequests}',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.orange.shade800,
+                    color: colors.warning,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -495,11 +510,11 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
         ),
         isThreeLine: true,
         secondary: CircleAvatar(
-          backgroundColor: team.paid ? Colors.green : Colors.grey.shade300,
+          backgroundColor: team.paid ? colors.success : colors.textMuted.withOpacity(0.3),
           child: Text(
             team.teamName.isNotEmpty ? team.teamName[0].toUpperCase() : '?',
             style: TextStyle(
-              color: team.paid ? Colors.white : Colors.grey.shade600,
+              color: team.paid ? Colors.white : colors.textMuted,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -509,28 +524,33 @@ class _ImportTeamsScreenState extends State<ImportTeamsScreen> {
   }
 
   Widget _buildExpectedFormatCard() {
+    final colors = context.colors;
     return Card(
       margin: const EdgeInsets.all(24),
+      color: colors.cardBackground,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Expected CSV Format:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colors.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Columns: Timestamp, Email, Score, Category, Team Name, '
               'Captain Name, Phone, Contact 2, Player Count, Special Requests, '
               'Rules Acknowledged, Signed By, Date, Column 13, Paid',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 12, color: colors.textSecondary),
             ),
             const SizedBox(height: 8),
             Text(
               'Paid column: "Y", "Yes", or "Paid" for paid teams',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 12, color: colors.textSecondary),
             ),
           ],
         ),

@@ -3,6 +3,7 @@ import '../../models/match.dart';
 import '../../services/match_service.dart';
 import '../../services/tournament_service.dart';
 import '../../models/tournament.dart';
+import '../../theme/theme.dart';
 
 class TournamentResultsScreen extends StatefulWidget {
   final String tournamentId;
@@ -91,7 +92,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading results: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.colors.error,
           ),
         );
       }
@@ -114,7 +115,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: context.colors.success,
             ),
             child: const Text('Close Tournament'),
           ),
@@ -134,9 +135,9 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tournament closed successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Tournament closed successfully!'),
+            backgroundColor: context.colors.success,
           ),
         );
       }
@@ -145,7 +146,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error closing tournament: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.colors.error,
           ),
         );
       }
@@ -154,7 +155,9 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,7 +169,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
             ),
           ],
         ),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: colors.cardBackground,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -180,6 +183,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
   }
 
   Widget _buildBody() {
+    final colors = context.colors;
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -189,19 +193,19 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.emoji_events, size: 64, color: Colors.grey[400]),
+            Icon(Icons.emoji_events, size: 64, color: colors.textMuted),
             const SizedBox(height: 16),
             Text(
               'No bracket results yet',
               style: TextStyle(
                 fontSize: 18,
-                color: Colors.grey[600],
+                color: colors.textSecondary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Complete bracket matches to see results',
-              style: TextStyle(color: Colors.grey[500]),
+              style: TextStyle(color: colors.textMuted),
             ),
           ],
         ),
@@ -233,15 +237,16 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
   }
 
   Widget _buildStatusCard(bool isCompleted) {
+    final colors = context.colors;
     return Card(
-      color: isCompleted ? Colors.green.shade50 : Colors.blue.shade50,
+      color: isCompleted ? colors.successLight : colors.accentLight,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Icon(
               isCompleted ? Icons.check_circle : Icons.sports_volleyball,
-              color: isCompleted ? Colors.green : Colors.blue,
+              color: isCompleted ? colors.success : colors.accent,
               size: 32,
             ),
             const SizedBox(width: 16),
@@ -254,7 +259,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      color: isCompleted ? Colors.green.shade900 : Colors.blue.shade900,
+                      color: colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -265,7 +270,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
                             ? 'All bracket matches are complete. Ready to close tournament.'
                             : 'Some bracket matches are still in progress.',
                     style: TextStyle(
-                      color: isCompleted ? Colors.green.shade700 : Colors.blue.shade700,
+                      color: colors.textSecondary,
                     ),
                   ),
                 ],
@@ -278,6 +283,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
   }
 
   Widget _buildTierResults(String tier) {
+    final colors = context.colors;
     final result = _tierResults[tier];
     if (result == null) return const SizedBox.shrink();
 
@@ -299,12 +305,12 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.emoji_events, color: Colors.white),
+                Icon(Icons.emoji_events, color: colors.textPrimary),
                 const SizedBox(width: 12),
                 Text(
                   '$tier Tier',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: colors.textPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                   ),
@@ -314,13 +320,13 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: colors.textPrimary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Complete',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: colors.textPrimary,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -363,7 +369,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
                     'Semi-Finalists',
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
+                      color: colors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -405,6 +411,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
     bool showPlacement = true,
     String? teamColor,
   }) {
+    final colors = context.colors;
     // Parse team color or use a default based on placement
     Color avatarColor;
     if (teamColor != null) {
@@ -463,9 +470,10 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
           Expanded(
             child: Text(
               teamName,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
+                color: colors.textPrimary,
               ),
             ),
           ),
@@ -503,19 +511,21 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
 
   /// Get avatar color based on placement
   Color _getPlacementAvatarColor(int placement) {
+    final colors = context.colors;
     switch (placement) {
       case 1:
-        return Colors.amber.shade700;
+        return colors.warning;
       case 2:
-        return Colors.blueGrey.shade600;
+        return colors.textMuted;
       case 3:
-        return Colors.brown.shade600;
+        return colors.textSecondary;
       default:
-        return Colors.blue;
+        return colors.accent;
     }
   }
 
   Widget _buildMatchSummary(TierResult result) {
+    final colors = context.colors;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
@@ -528,13 +538,13 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
           label: 'Completed',
           value: '${result.completedMatches}',
           icon: Icons.check_circle,
-          color: Colors.green,
+          color: colors.success,
         ),
         _buildStatItem(
           label: 'Remaining',
           value: '${result.totalMatches - result.completedMatches}',
           icon: Icons.pending,
-          color: result.isComplete ? Colors.grey : Colors.orange,
+          color: result.isComplete ? colors.textMuted : colors.warning,
         ),
       ],
     );
@@ -546,9 +556,10 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
     required IconData icon,
     Color? color,
   }) {
+    final colors = context.colors;
     return Column(
       children: [
-        Icon(icon, color: color ?? Colors.blue, size: 20),
+        Icon(icon, color: color ?? colors.accent, size: 20),
         const SizedBox(height: 4),
         Text(
           value,
@@ -561,7 +572,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey[600],
+            color: colors.textSecondary,
           ),
         ),
       ],
@@ -569,6 +580,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
   }
 
   Widget _buildFinalsScore(Map<String, dynamic> finalsMatch) {
+    final colors = context.colors;
     final match = Match.fromJson(finalsMatch);
     final team1 = finalsMatch['team1'] as Map<String, dynamic>?;
     final team2 = finalsMatch['team2'] as Map<String, dynamic>?;
@@ -587,16 +599,16 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
     try {
       team1AvatarColor = team1Color != null
           ? Color(int.parse(team1Color.replaceFirst('#', '0xFF')))
-          : Colors.blue;
+          : colors.accent;
     } catch (_) {
-      team1AvatarColor = Colors.blue;
+      team1AvatarColor = colors.accent;
     }
     try {
       team2AvatarColor = team2Color != null
           ? Color(int.parse(team2Color.replaceFirst('#', '0xFF')))
-          : Colors.red;
+          : colors.error;
     } catch (_) {
-      team2AvatarColor = Colors.red;
+      team2AvatarColor = colors.error;
     }
 
     return Column(
@@ -605,16 +617,16 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
           'Finals',
           style: TextStyle(
             fontWeight: FontWeight.w500,
-            color: Colors.grey[700],
+            color: colors.textSecondary,
           ),
         ),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: colors.cardBackgroundLight,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: colors.divider),
           ),
           child: Row(
             children: [
@@ -633,7 +645,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
                             color: team1AvatarColor.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: team1Won ? Colors.amber : team1AvatarColor,
+                              color: team1Won ? colors.warning : team1AvatarColor,
                               width: team1Won ? 3 : 2,
                             ),
                           ),
@@ -656,7 +668,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
                             child: Center(
                               child: Icon(
                                 Icons.emoji_events,
-                                color: Colors.amber.shade700,
+                                color: colors.warning,
                                 size: 20,
                               ),
                             ),
@@ -669,7 +681,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
                       style: TextStyle(
                         fontWeight: team1Won ? FontWeight.bold : FontWeight.normal,
                         fontSize: 14,
-                        color: team1Won ? Colors.green.shade700 : null,
+                        color: team1Won ? colors.success : colors.textPrimary,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 2,
@@ -682,7 +694,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colors.cardBackground,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
@@ -694,9 +706,10 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
                 ),
                 child: Text(
                   '${match.team1SetsWon} - ${match.team2SetsWon}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 22,
+                    color: colors.textPrimary,
                   ),
                 ),
               ),
@@ -715,7 +728,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
                             color: team2AvatarColor.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: team2Won ? Colors.amber : team2AvatarColor,
+                              color: team2Won ? colors.warning : team2AvatarColor,
                               width: team2Won ? 3 : 2,
                             ),
                           ),
@@ -738,7 +751,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
                             child: Center(
                               child: Icon(
                                 Icons.emoji_events,
-                                color: Colors.amber.shade700,
+                                color: colors.warning,
                                 size: 20,
                               ),
                             ),
@@ -751,7 +764,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
                       style: TextStyle(
                         fontWeight: team2Won ? FontWeight.bold : FontWeight.normal,
                         fontSize: 14,
-                        color: team2Won ? Colors.green.shade700 : null,
+                        color: team2Won ? colors.success : colors.textPrimary,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 2,
@@ -768,13 +781,14 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
   }
 
   Widget _buildCloseTournamentButton() {
+    final colors = context.colors;
     return Card(
-      color: Colors.green.shade50,
+      color: colors.successLight,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const Icon(Icons.flag, color: Colors.green, size: 48),
+            Icon(Icons.flag, color: colors.success, size: 48),
             const SizedBox(height: 12),
             const Text(
               'All bracket matches are complete!',
@@ -786,7 +800,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
             const SizedBox(height: 8),
             Text(
               'Close the tournament to finalize results.',
-              style: TextStyle(color: Colors.grey[600]),
+              style: TextStyle(color: colors.textSecondary),
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
@@ -794,7 +808,7 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
               icon: const Icon(Icons.check_circle),
               label: const Text('Close Tournament'),
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: colors.success,
                 minimumSize: const Size(double.infinity, 48),
               ),
             ),
@@ -805,15 +819,16 @@ class _TournamentResultsScreenState extends State<TournamentResultsScreen> {
   }
 
   Color _getTierColor(String tier) {
+    final colors = context.colors;
     switch (tier) {
       case 'Advanced':
-        return Colors.green;
+        return colors.success;
       case 'Intermediate':
-        return Colors.blue;
+        return colors.accent;
       case 'Recreational':
-        return Colors.orange;
+        return colors.warning;
       default:
-        return Colors.grey;
+        return colors.textMuted;
     }
   }
 }

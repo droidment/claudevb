@@ -4,6 +4,7 @@ import '../../models/match_set.dart';
 import '../../models/scoring_format.dart';
 import '../../models/scoring_config.dart';
 import '../../services/match_service.dart';
+import '../../theme/theme.dart';
 
 class MatchDetailScreen extends StatefulWidget {
   final String matchId;
@@ -104,7 +105,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
             content: Text(
               'Match is already complete (${scoring.displayName})',
             ),
-            backgroundColor: Colors.orange,
+            backgroundColor: context.colors.warning,
           ),
         );
       }
@@ -119,7 +120,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
             content: Text(
               'Maximum sets reached (${scoring.numberOfSets})',
             ),
-            backgroundColor: Colors.orange,
+            backgroundColor: context.colors.warning,
           ),
         );
       }
@@ -160,9 +161,9 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Set added successfully'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Set added successfully'),
+            backgroundColor: context.colors.success,
           ),
         );
       }
@@ -171,7 +172,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error adding set: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.colors.error,
           ),
         );
       }
@@ -211,9 +212,9 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Set updated successfully'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Set updated successfully'),
+            backgroundColor: context.colors.success,
           ),
         );
       }
@@ -222,7 +223,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error updating set: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.colors.error,
           ),
         );
       }
@@ -242,7 +243,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: context.colors.error),
             child: const Text('Delete'),
           ),
         ],
@@ -261,9 +262,9 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Set deleted successfully'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Set deleted successfully'),
+            backgroundColor: context.colors.success,
           ),
         );
       }
@@ -272,7 +273,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error deleting set: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.colors.error,
           ),
         );
       }
@@ -314,7 +315,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Match status updated to ${newStatus.displayName}'),
-            backgroundColor: Colors.green,
+            backgroundColor: context.colors.success,
           ),
         );
       }
@@ -323,7 +324,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error updating status: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.colors.error,
           ),
         );
       }
@@ -332,12 +333,14 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: Text(_match != null
             ? 'Match #${_match!.matchNumber ?? '?'}'
             : 'Match Details'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: colors.cardBackground,
       ),
       body: _buildBody(),
       floatingActionButton: widget.isOrganizer && _match != null && !_match!.isComplete
@@ -351,6 +354,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   Widget _buildBody() {
+    final colors = context.colors;
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -360,7 +364,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: colors.error),
             const SizedBox(height: 16),
             Text('Error: ${_error ?? "Match not found"}'),
             const SizedBox(height: 16),
@@ -435,6 +439,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   Widget _buildTeamsCard() {
+    final colors = context.colors;
     final team1Wins = _sets.where((s) => s.winningTeam == 1).length;
     final team2Wins = _sets.where((s) => s.winningTeam == 2).length;
 
@@ -455,7 +460,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                   ),
                 ),
                 if (_match!.winnerId == _match!.team1Id)
-                  const Icon(Icons.emoji_events, color: Colors.amber, size: 32),
+                  Icon(Icons.emoji_events, color: colors.warning, size: 32),
               ],
             ),
             if (_sets.isNotEmpty)
@@ -465,7 +470,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                   'Sets won: $team1Wins',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: colors.textSecondary,
                   ),
                 ),
               ),
@@ -476,7 +481,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[400],
+                color: colors.textMuted,
               ),
             ),
             const SizedBox(height: 16),
@@ -485,7 +490,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
             Row(
               children: [
                 if (_match!.winnerId == _match!.team2Id)
-                  const Icon(Icons.emoji_events, color: Colors.amber, size: 32),
+                  Icon(Icons.emoji_events, color: colors.warning, size: 32),
                 Expanded(
                   child: Text(
                     _team2Name!,
@@ -504,7 +509,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                   'Sets won: $team2Wins',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: colors.textSecondary,
                   ),
                   textAlign: TextAlign.right,
                 ),
@@ -516,6 +521,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   Widget _buildSetsCard() {
+    final colors = context.colors;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -535,11 +541,11 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
-                      Icon(Icons.score, size: 48, color: Colors.grey[400]),
+                      Icon(Icons.score, size: 48, color: colors.textMuted),
                       const SizedBox(height: 8),
                       Text(
                         'No sets recorded yet',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(color: colors.textSecondary),
                       ),
                     ],
                   ),
@@ -554,22 +560,23 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   Widget _buildSetTile(MatchSet set) {
+    final colors = context.colors;
     final isValid = set.isValidVolleyballScore;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: !isValid ? Colors.orange.shade50 : null,
+      color: !isValid ? colors.warningLight : null,
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: set.winningTeam == 1
-              ? Colors.green
+              ? colors.success
               : set.winningTeam == 2
-                  ? Colors.blue
-                  : Colors.grey,
+                  ? colors.accent
+                  : colors.textMuted,
           child: Text(
             '${set.setNumber}',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: colors.textPrimary,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -602,9 +609,9 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
           ],
         ),
         subtitle: !isValid
-            ? const Text(
+            ? Text(
                 'Unusual volleyball score',
-                style: TextStyle(color: Colors.orange, fontSize: 11),
+                style: TextStyle(color: colors.warning, fontSize: 11),
                 textAlign: TextAlign.center,
               )
             : null,
@@ -627,11 +634,11 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
                     child: ListTile(
-                      leading: Icon(Icons.delete, color: Colors.red),
-                      title: Text('Delete', style: TextStyle(color: Colors.red)),
+                      leading: Icon(Icons.delete, color: colors.error),
+                      title: Text('Delete', style: TextStyle(color: colors.error)),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
@@ -643,6 +650,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   Widget _buildActionsCard() {
+    final colors = context.colors;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -673,7 +681,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                   icon: const Icon(Icons.check_circle),
                   label: const Text('Complete Match'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: colors.success,
                   ),
                 ),
               ),
@@ -686,7 +694,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                   icon: const Icon(Icons.cancel),
                   label: const Text('Cancel Match'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
+                    foregroundColor: colors.error,
                   ),
                 ),
               ),
@@ -698,24 +706,25 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   Widget _buildStatusBadge(MatchStatus status) {
+    final colors = context.colors;
     Color color;
     IconData icon;
 
     switch (status) {
       case MatchStatus.scheduled:
-        color = Colors.blue;
+        color = colors.accent;
         icon = Icons.schedule;
         break;
       case MatchStatus.inProgress:
-        color = Colors.orange;
+        color = colors.warning;
         icon = Icons.play_circle;
         break;
       case MatchStatus.completed:
-        color = Colors.green;
+        color = colors.success;
         icon = Icons.check_circle;
         break;
       case MatchStatus.cancelled:
-        color = Colors.red;
+        color = colors.error;
         icon = Icons.cancel;
         break;
     }
@@ -746,17 +755,18 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
+          Icon(icon, size: 20, color: colors.textSecondary),
           const SizedBox(width: 12),
           Text(
             '$label:',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[600],
+              color: colors.textSecondary,
             ),
           ),
           const SizedBox(width: 8),
@@ -843,6 +853,7 @@ class _AddSetDialogState extends State<_AddSetDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return AlertDialog(
       title: Text('${widget.initialTeam1Score == null ? 'Add' : 'Edit'} Set ${widget.setNumber}'),
       content: Column(
@@ -853,20 +864,20 @@ class _AddSetDialogState extends State<_AddSetDialog> {
             padding: const EdgeInsets.all(12),
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: colors.accentLight,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.shade200),
+              border: Border.all(color: colors.accent.withOpacity(0.5)),
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                Icon(Icons.info_outline, color: colors.accent, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     _getSetInfo(),
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.blue.shade900,
+                      color: colors.textPrimary,
                     ),
                   ),
                 ),
@@ -909,9 +920,9 @@ class _AddSetDialogState extends State<_AddSetDialog> {
 
             if (team1Score == null || team2Score == null) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Please enter valid scores'),
-                  backgroundColor: Colors.red,
+                SnackBar(
+                  content: const Text('Please enter valid scores'),
+                  backgroundColor: colors.error,
                 ),
               );
               return;
@@ -919,9 +930,9 @@ class _AddSetDialogState extends State<_AddSetDialog> {
 
             if (team1Score < 0 || team2Score < 0) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Scores must be positive'),
-                  backgroundColor: Colors.red,
+                SnackBar(
+                  content: const Text('Scores must be positive'),
+                  backgroundColor: colors.error,
                 ),
               );
               return;
@@ -939,7 +950,7 @@ class _AddSetDialogState extends State<_AddSetDialog> {
                   content: Text(
                     'Invalid score. Winner must reach $target and win by 2 points.',
                   ),
-                  backgroundColor: Colors.orange,
+                  backgroundColor: colors.warning,
                 ),
               );
               return;
