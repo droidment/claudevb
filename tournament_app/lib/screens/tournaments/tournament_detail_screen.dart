@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../config/app_colors.dart';
 import '../../models/tournament.dart';
 import '../../models/tournament_registration.dart';
 import '../../models/scoring_format.dart';
@@ -20,21 +21,6 @@ import 'manage_lunches_screen.dart';
 import 'scoring_config_screen.dart';
 import 'manage_staff_screen.dart';
 import '../../models/scoring_config.dart';
-
-// Dark theme colors (consistent with home screen and browse screen)
-class _DetailColors {
-  static const Color background = Color(0xFF0D1117);
-  static const Color cardBackground = Color(0xFF161B22);
-  static const Color cardBackgroundLight = Color(0xFF1C2128);
-  static const Color accent = Color(0xFF58A6FF);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF8B949E);
-  static const Color textMuted = Color(0xFF6E7681);
-  static const Color success = Color(0xFF3FB950);
-  static const Color warning = Color(0xFFD29922);
-  static const Color error = Color(0xFFF85149);
-  static const Color divider = Color(0xFF21262D);
-}
 
 class TournamentDetailScreen extends StatefulWidget {
   final String tournamentId;
@@ -163,7 +149,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Status updated to ${newStatus.displayName}'),
-            backgroundColor: _DetailColors.success,
+            backgroundColor: AppColors.success,
           ),
         );
       }
@@ -172,7 +158,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error updating status: $e'),
-            backgroundColor: _DetailColors.error,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -230,15 +216,15 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
   Color _getStatusColor(TournamentStatus status) {
     switch (status) {
       case TournamentStatus.registrationOpen:
-        return _DetailColors.success;
+        return AppColors.success;
       case TournamentStatus.registrationClosed:
-        return _DetailColors.warning;
+        return AppColors.warning;
       case TournamentStatus.ongoing:
-        return _DetailColors.accent;
+        return AppColors.accent;
       case TournamentStatus.completed:
-        return _DetailColors.textMuted;
+        return AppColors.textMuted;
       case TournamentStatus.cancelled:
-        return _DetailColors.error;
+        return AppColors.error;
     }
   }
 
@@ -260,7 +246,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _DetailColors.background,
+      backgroundColor: AppColors.background,
       body: _buildBody(),
       bottomNavigationBar: _tournament != null ? _buildBottomBar() : null,
     );
@@ -269,7 +255,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: _DetailColors.accent),
+        child: CircularProgressIndicator(color: AppColors.accent),
       );
     }
 
@@ -278,17 +264,17 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: _DetailColors.error),
+            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
             Text(
               'Error: ${_error ?? "Tournament not found"}',
-              style: const TextStyle(color: _DetailColors.textPrimary),
+              style: const TextStyle(color: AppColors.textPrimary),
             ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _loadTournament,
               style: FilledButton.styleFrom(
-                backgroundColor: _DetailColors.accent,
+                backgroundColor: AppColors.accent,
               ),
               child: const Text('Retry'),
             ),
@@ -299,7 +285,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadTournament,
-      color: _DetailColors.accent,
+      color: AppColors.accent,
       child: CustomScrollView(
         slivers: [
           // Hero Image Header
@@ -364,7 +350,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     return SliverAppBar(
       expandedHeight: 280,
       pinned: true,
-      backgroundColor: _DetailColors.background,
+      backgroundColor: AppColors.background,
       leading: IconButton(
         icon: Container(
           padding: const EdgeInsets.all(8),
@@ -418,7 +404,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               ),
               child: const Icon(Icons.more_vert, color: Colors.white, size: 20),
             ),
-            color: _DetailColors.cardBackground,
+            color: AppColors.cardBackground,
             onSelected: (value) {
               if (value == 'edit') {
                 _editTournament();
@@ -432,27 +418,27 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               const PopupMenuItem(
                 value: 'edit',
                 child: ListTile(
-                  leading: Icon(Icons.edit, color: _DetailColors.textSecondary),
+                  leading: Icon(Icons.edit, color: AppColors.textSecondary),
                   title: Text('Edit Tournament',
-                      style: TextStyle(color: _DetailColors.textPrimary)),
+                      style: TextStyle(color: AppColors.textPrimary)),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
               const PopupMenuItem(
                 value: 'status',
                 child: ListTile(
-                  leading: Icon(Icons.sync, color: _DetailColors.textSecondary),
+                  leading: Icon(Icons.sync, color: AppColors.textSecondary),
                   title: Text('Change Status',
-                      style: TextStyle(color: _DetailColors.textPrimary)),
+                      style: TextStyle(color: AppColors.textPrimary)),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
               const PopupMenuItem(
                 value: 'delete',
                 child: ListTile(
-                  leading: Icon(Icons.delete, color: _DetailColors.error),
+                  leading: Icon(Icons.delete, color: AppColors.error),
                   title: Text('Delete',
-                      style: TextStyle(color: _DetailColors.error)),
+                      style: TextStyle(color: AppColors.error)),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -472,7 +458,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                   end: Alignment.bottomRight,
                   colors: [
                     gradientColor.withValues(alpha: 0.4),
-                    _DetailColors.cardBackgroundLight,
+                    AppColors.cardBackgroundLight,
                   ],
                 ),
               ),
@@ -501,8 +487,8 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      _DetailColors.background.withValues(alpha: 0.8),
-                      _DetailColors.background,
+                      AppColors.background.withValues(alpha: 0.8),
+                      AppColors.background,
                     ],
                   ),
                 ),
@@ -545,13 +531,13 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: _DetailColors.cardBackground,
+                          color: AppColors.cardBackground,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           '${_tournament!.minTeamSize}V${_tournament!.minTeamSize}',
                           style: const TextStyle(
-                            color: _DetailColors.textPrimary,
+                            color: AppColors.textPrimary,
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                           ),
@@ -564,7 +550,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                   Text(
                     _tournament!.name,
                     style: const TextStyle(
-                      color: _DetailColors.textPrimary,
+                      color: AppColors.textPrimary,
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
@@ -575,14 +561,14 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                     children: [
                       Icon(
                         _getSportIcon(_tournament!.sportType),
-                        color: _DetailColors.textSecondary,
+                        color: AppColors.textSecondary,
                         size: 18,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         "${_tournament!.format.displayName} ${_tournament!.sportType[0].toUpperCase()}${_tournament!.sportType.substring(1)}",
                         style: const TextStyle(
-                          color: _DetailColors.textSecondary,
+                          color: AppColors.textSecondary,
                           fontSize: 14,
                         ),
                       ),
@@ -644,18 +630,18 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: _DetailColors.cardBackground,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _DetailColors.divider),
+        border: Border.all(color: AppColors.divider),
       ),
       child: Column(
         children: [
-          Icon(icon, color: _DetailColors.accent, size: 24),
+          Icon(icon, color: AppColors.accent, size: 24),
           const SizedBox(height: 8),
           Text(
             value,
             style: const TextStyle(
-              color: _DetailColors.textPrimary,
+              color: AppColors.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -664,7 +650,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           Text(
             label,
             style: const TextStyle(
-              color: _DetailColors.textMuted,
+              color: AppColors.textMuted,
               fontSize: 10,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.5,
@@ -705,19 +691,19 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: _DetailColors.cardBackground,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _DetailColors.divider),
+        border: Border.all(color: AppColors.divider),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: _DetailColors.accent),
+          Icon(icon, size: 16, color: AppColors.accent),
           const SizedBox(width: 6),
           Text(
             label,
             style: const TextStyle(
-              color: _DetailColors.textPrimary,
+              color: AppColors.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -734,7 +720,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         const Text(
           'About the Event',
           style: TextStyle(
-            color: _DetailColors.textPrimary,
+            color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -743,13 +729,13 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: _DetailColors.cardBackground,
+            color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             _tournament!.description!,
             style: const TextStyle(
-              color: _DetailColors.textSecondary,
+              color: AppColors.textSecondary,
               fontSize: 14,
               height: 1.5,
             ),
@@ -766,7 +752,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         const Text(
           'Schedule',
           style: TextStyle(
-            color: _DetailColors.textPrimary,
+            color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -775,7 +761,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: _DetailColors.cardBackground,
+            color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -783,7 +769,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               // Registration Deadline
               _buildTimelineItem(
                 icon: Icons.how_to_reg,
-                iconColor: _DetailColors.error,
+                iconColor: AppColors.error,
                 title: 'DEADLINE',
                 date: _formatDate(_tournament!.registrationDeadline),
                 subtitle: 'Team registration closes',
@@ -792,7 +778,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               // Start Date
               _buildTimelineItem(
                 icon: Icons.play_circle_outline,
-                iconColor: _DetailColors.accent,
+                iconColor: AppColors.accent,
                 title: 'KICKOFF',
                 date: _formatDate(_tournament!.startDate),
                 subtitle: 'Tournament begins',
@@ -800,7 +786,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               // End Date
               _buildTimelineItem(
                 icon: Icons.emoji_events,
-                iconColor: _DetailColors.warning,
+                iconColor: AppColors.warning,
                 title: 'FINALS',
                 date: _formatDate(_tournament!.endDate),
                 subtitle: 'Championship game',
@@ -832,7 +818,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               Container(
                 width: 2,
                 height: 16,
-                color: _DetailColors.divider,
+                color: AppColors.divider,
               ),
             Container(
               width: 40,
@@ -847,7 +833,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               Container(
                 width: 2,
                 height: 24,
-                color: _DetailColors.divider,
+                color: AppColors.divider,
               ),
           ],
         ),
@@ -872,7 +858,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                 Text(
                   date,
                   style: const TextStyle(
-                    color: _DetailColors.textPrimary,
+                    color: AppColors.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -881,7 +867,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                 Text(
                   subtitle,
                   style: const TextStyle(
-                    color: _DetailColors.textMuted,
+                    color: AppColors.textMuted,
                     fontSize: 13,
                   ),
                 ),
@@ -903,7 +889,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
             const Text(
               'Location',
               style: TextStyle(
-                color: _DetailColors.textPrimary,
+                color: AppColors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -917,7 +903,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               },
               child: const Text(
                 'Get Directions',
-                style: TextStyle(color: _DetailColors.accent),
+                style: TextStyle(color: AppColors.accent),
               ),
             ),
           ],
@@ -927,7 +913,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         Container(
           height: 150,
           decoration: BoxDecoration(
-            color: _DetailColors.cardBackgroundLight,
+            color: AppColors.cardBackgroundLight,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Stack(
@@ -944,7 +930,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               const Center(
                 child: Icon(
                   Icons.location_on,
-                  color: _DetailColors.error,
+                  color: AppColors.error,
                   size: 40,
                 ),
               ),
@@ -956,7 +942,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: _DetailColors.cardBackground,
+            color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -965,12 +951,12 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: _DetailColors.accent.withValues(alpha: 0.15),
+                  color: AppColors.accent.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.location_on,
-                  color: _DetailColors.accent,
+                  color: AppColors.accent,
                   size: 20,
                 ),
               ),
@@ -982,7 +968,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                     Text(
                       _tournament!.location!,
                       style: const TextStyle(
-                        color: _DetailColors.textPrimary,
+                        color: AppColors.textPrimary,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
@@ -992,7 +978,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                       Text(
                         _tournament!.venueDetails!,
                         style: const TextStyle(
-                          color: _DetailColors.textMuted,
+                          color: AppColors.textMuted,
                           fontSize: 13,
                         ),
                       ),
@@ -1014,7 +1000,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         const Text(
           'Team Requirements',
           style: TextStyle(
-            color: _DetailColors.textPrimary,
+            color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -1022,7 +1008,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: _DetailColors.cardBackground,
+            color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -1063,7 +1049,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         border: isLast
             ? null
             : const Border(
-                bottom: BorderSide(color: _DetailColors.divider),
+                bottom: BorderSide(color: AppColors.divider),
               ),
       ),
       child: Row(
@@ -1072,14 +1058,14 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           Text(
             label,
             style: const TextStyle(
-              color: _DetailColors.textSecondary,
+              color: AppColors.textSecondary,
               fontSize: 14,
             ),
           ),
           Text(
             value,
             style: const TextStyle(
-              color: _DetailColors.textPrimary,
+              color: AppColors.textPrimary,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -1096,7 +1082,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         const Text(
           'Organizer Tools',
           style: TextStyle(
-            color: _DetailColors.textPrimary,
+            color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -1109,10 +1095,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: _DetailColors.warning.withValues(alpha: 0.1),
+              color: AppColors.warning.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: _DetailColors.warning.withValues(alpha: 0.3),
+                color: AppColors.warning.withValues(alpha: 0.3),
               ),
             ),
             child: Column(
@@ -1120,12 +1106,12 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.vpn_key, color: _DetailColors.warning, size: 20),
+                    Icon(Icons.vpn_key, color: AppColors.warning, size: 20),
                     const SizedBox(width: 8),
                     const Text(
                       'Invite Code',
                       style: TextStyle(
-                        color: _DetailColors.warning,
+                        color: AppColors.warning,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1138,7 +1124,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                       child: Text(
                         _tournament!.inviteCode!,
                         style: const TextStyle(
-                          color: _DetailColors.textPrimary,
+                          color: AppColors.textPrimary,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 2,
@@ -1146,7 +1132,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.copy, color: _DetailColors.warning),
+                      icon: const Icon(Icons.copy, color: AppColors.warning),
                       onPressed: () {
                         Clipboard.setData(
                           ClipboardData(text: _tournament!.inviteCode!),
@@ -1154,7 +1140,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Invite code copied!'),
-                            backgroundColor: _DetailColors.success,
+                            backgroundColor: AppColors.success,
                           ),
                         );
                       },
@@ -1169,7 +1155,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: _DetailColors.cardBackground,
+            color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -1181,7 +1167,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                   Text(
                     'Registered Teams (${_registeredTeams.length})',
                     style: const TextStyle(
-                      color: _DetailColors.textPrimary,
+                      color: AppColors.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1191,7 +1177,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('Add'),
                     style: TextButton.styleFrom(
-                      foregroundColor: _DetailColors.accent,
+                      foregroundColor: AppColors.accent,
                     ),
                   ),
                 ],
@@ -1285,7 +1271,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                         Icons.emoji_events,
                         'Results',
                         _navigateToResults,
-                        color: _DetailColors.warning,
+                        color: AppColors.warning,
                       ),
                     ),
                   ],
@@ -1295,7 +1281,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               // Team list preview
               if (_registeredTeams.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                const Divider(color: _DetailColors.divider),
+                const Divider(color: AppColors.divider),
                 const SizedBox(height: 12),
                 ..._registeredTeams.take(5).map((reg) => _buildTeamTile(reg)),
                 if (_registeredTeams.length > 5)
@@ -1306,7 +1292,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                         onPressed: _navigateToManageSeeds,
                         child: Text(
                           'View all ${_registeredTeams.length} teams',
-                          style: const TextStyle(color: _DetailColors.accent),
+                          style: const TextStyle(color: AppColors.accent),
                         ),
                       ),
                     ),
@@ -1320,12 +1306,12 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                         Icon(
                           Icons.group_off,
                           size: 48,
-                          color: _DetailColors.textMuted,
+                          color: AppColors.textMuted,
                         ),
                         const SizedBox(height: 12),
                         const Text(
                           'No teams registered yet',
-                          style: TextStyle(color: _DetailColors.textSecondary),
+                          style: TextStyle(color: AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -1348,19 +1334,19 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: _DetailColors.cardBackgroundLight,
+          color: AppColors.cardBackgroundLight,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: _DetailColors.divider),
+          border: Border.all(color: AppColors.divider),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: _DetailColors.textSecondary),
+            Icon(icon, size: 16, color: AppColors.textSecondary),
             const SizedBox(width: 6),
             Text(
               label,
               style: const TextStyle(
-                color: _DetailColors.textPrimary,
+                color: AppColors.textPrimary,
                 fontSize: 13,
               ),
             ),
@@ -1377,16 +1363,16 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     bool isPrimary = false,
     Color? color,
   }) {
-    final buttonColor = color ?? (isPrimary ? _DetailColors.accent : _DetailColors.cardBackgroundLight);
+    final buttonColor = color ?? (isPrimary ? AppColors.accent : AppColors.cardBackgroundLight);
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isPrimary ? buttonColor : _DetailColors.cardBackgroundLight,
+          color: isPrimary ? buttonColor : AppColors.cardBackgroundLight,
           borderRadius: BorderRadius.circular(10),
-          border: isPrimary ? null : Border.all(color: color ?? _DetailColors.divider),
+          border: isPrimary ? null : Border.all(color: color ?? AppColors.divider),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1394,13 +1380,13 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
             Icon(
               icon,
               size: 18,
-              color: isPrimary ? Colors.white : (color ?? _DetailColors.textSecondary),
+              color: isPrimary ? Colors.white : (color ?? AppColors.textSecondary),
             ),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: isPrimary ? Colors.white : (color ?? _DetailColors.textPrimary),
+                color: isPrimary ? Colors.white : (color ?? AppColors.textPrimary),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1422,7 +1408,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     final poolAssignment = registration['pool_assignment'] as String?;
     final seedNumber = registration['seed_number'] as int?;
 
-    Color avatarColor = _DetailColors.accent;
+    Color avatarColor = AppColors.accent;
     if (teamColor != null) {
       try {
         avatarColor = Color(int.parse(teamColor.replaceFirst('#', '0xFF')));
@@ -1433,7 +1419,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _DetailColors.cardBackgroundLight,
+        color: AppColors.cardBackgroundLight,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -1445,7 +1431,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               height: 24,
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
-                color: _DetailColors.warning.withValues(alpha: 0.2),
+                color: AppColors.warning.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Center(
@@ -1454,7 +1440,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 11,
-                    color: _DetailColors.warning,
+                    color: AppColors.warning,
                   ),
                 ),
               ),
@@ -1486,7 +1472,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                 Text(
                   teamName,
                   style: const TextStyle(
-                    color: _DetailColors.textPrimary,
+                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1496,7 +1482,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                       Text(
                         'Pool $poolAssignment',
                         style: const TextStyle(
-                          color: _DetailColors.textMuted,
+                          color: AppColors.textMuted,
                           fontSize: 12,
                         ),
                       ),
@@ -1509,8 +1495,8 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: isPaid
-                            ? _DetailColors.success.withValues(alpha: 0.2)
-                            : _DetailColors.warning.withValues(alpha: 0.2),
+                            ? AppColors.success.withValues(alpha: 0.2)
+                            : AppColors.warning.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -1519,8 +1505,8 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
                           color: isPaid
-                              ? _DetailColors.success
-                              : _DetailColors.warning,
+                              ? AppColors.success
+                              : AppColors.warning,
                         ),
                       ),
                     ),
@@ -1533,10 +1519,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           PopupMenuButton<String>(
             icon: const Icon(
               Icons.more_vert,
-              color: _DetailColors.textMuted,
+              color: AppColors.textMuted,
               size: 20,
             ),
-            color: _DetailColors.cardBackground,
+            color: AppColors.cardBackground,
             onSelected: (value) {
               if (value == 'remove') {
                 _removeTeamFromTournament(teamId, teamName);
@@ -1547,11 +1533,11 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
             itemBuilder: (context) => [
               const PopupMenuItem(
                 value: 'edit',
-                child: Text('Edit', style: TextStyle(color: _DetailColors.textPrimary)),
+                child: Text('Edit', style: TextStyle(color: AppColors.textPrimary)),
               ),
               const PopupMenuItem(
                 value: 'remove',
-                child: Text('Remove', style: TextStyle(color: _DetailColors.error)),
+                child: Text('Remove', style: TextStyle(color: AppColors.error)),
               ),
             ],
           ),
@@ -1573,9 +1559,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         bottom: MediaQuery.of(context).padding.bottom + 16,
       ),
       decoration: BoxDecoration(
-        color: _DetailColors.cardBackground,
+        color: AppColors.cardBackground,
         border: const Border(
-          top: BorderSide(color: _DetailColors.divider),
+          top: BorderSide(color: AppColors.divider),
         ),
       ),
       child: Row(
@@ -1588,7 +1574,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               const Text(
                 'TOTAL FEE',
                 style: TextStyle(
-                  color: _DetailColors.textMuted,
+                  color: AppColors.textMuted,
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.5,
@@ -1600,7 +1586,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                     ? '\$${_tournament!.entryFee!.toInt()}'
                     : 'Free',
                 style: const TextStyle(
-                  color: _DetailColors.textPrimary,
+                  color: AppColors.textPrimary,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1608,7 +1594,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               Text(
                 '/ team',
                 style: TextStyle(
-                  color: _DetailColors.textMuted,
+                  color: AppColors.textMuted,
                   fontSize: 12,
                 ),
               ),
@@ -1631,8 +1617,8 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                   : null,
               style: FilledButton.styleFrom(
                 backgroundColor: canRegister
-                    ? _DetailColors.accent
-                    : _DetailColors.textMuted,
+                    ? AppColors.accent
+                    : AppColors.textMuted,
                 padding: const EdgeInsets.symmetric(horizontal: 32),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(25),
@@ -1683,7 +1669,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
   void _showStatusMenu() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: _DetailColors.cardBackground,
+      backgroundColor: AppColors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1696,7 +1682,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: _DetailColors.textMuted,
+                color: AppColors.textMuted,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1704,7 +1690,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
             const Text(
               'Change Status',
               style: TextStyle(
-                color: _DetailColors.textPrimary,
+                color: AppColors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -1720,12 +1706,12 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                 title: Text(
                   status.displayName,
                   style: TextStyle(
-                    color: _DetailColors.textPrimary,
+                    color: AppColors.textPrimary,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
                 trailing: isSelected
-                    ? const Icon(Icons.check, color: _DetailColors.accent)
+                    ? const Icon(Icons.check, color: AppColors.accent)
                     : null,
                 onTap: () {
                   Navigator.of(context).pop();
@@ -1759,14 +1745,14 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: _DetailColors.cardBackground,
+        backgroundColor: AppColors.cardBackground,
         title: const Text(
           'Delete Tournament',
-          style: TextStyle(color: _DetailColors.textPrimary),
+          style: TextStyle(color: AppColors.textPrimary),
         ),
         content: const Text(
           'Are you sure you want to delete this tournament? This action cannot be undone.',
-          style: TextStyle(color: _DetailColors.textSecondary),
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -1775,7 +1761,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: _DetailColors.error),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Delete'),
           ),
         ],
@@ -1790,7 +1776,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Tournament deleted successfully'),
-              backgroundColor: _DetailColors.success,
+              backgroundColor: AppColors.success,
             ),
           );
         }
@@ -1799,7 +1785,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error deleting tournament: $e'),
-              backgroundColor: _DetailColors.error,
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -1878,7 +1864,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Scoring configuration saved'),
-              backgroundColor: _DetailColors.success,
+              backgroundColor: AppColors.success,
             ),
           );
         }
@@ -1887,7 +1873,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error saving scoring config: $e'),
-              backgroundColor: _DetailColors.error,
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -1985,7 +1971,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('At least 2 teams are required to generate matches'),
-            backgroundColor: _DetailColors.warning,
+            backgroundColor: AppColors.warning,
           ),
         );
       }
@@ -2003,7 +1989,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                 '${teamsWithoutPool.length} team(s) have no pool assignment. '
                 'Please assign all teams to pools first.',
               ),
-              backgroundColor: _DetailColors.warning,
+              backgroundColor: AppColors.warning,
               duration: const Duration(seconds: 4),
             ),
           );
@@ -2021,7 +2007,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                   'Pool ${entry.key} has only ${entry.value.length} team(s). '
                   'Each pool needs at least 2 teams.',
                 ),
-                backgroundColor: _DetailColors.warning,
+                backgroundColor: AppColors.warning,
               ),
             );
           }
@@ -2053,17 +2039,17 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           barrierDismissible: false,
           builder: (context) => Center(
             child: Card(
-              color: _DetailColors.cardBackground,
+              color: AppColors.cardBackground,
               child: const Padding(
                 padding: EdgeInsets.all(24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(color: _DetailColors.accent),
+                    CircularProgressIndicator(color: AppColors.accent),
                     SizedBox(height: 16),
                     Text(
                       'Generating matches...',
-                      style: TextStyle(color: _DetailColors.textPrimary),
+                      style: TextStyle(color: AppColors.textPrimary),
                     ),
                   ],
                 ),
@@ -2109,7 +2095,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${matchesData.length} matches generated successfully!'),
-            backgroundColor: _DetailColors.success,
+            backgroundColor: AppColors.success,
           ),
         );
 
@@ -2122,7 +2108,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error generating schedule: $e'),
-            backgroundColor: _DetailColors.error,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -2133,14 +2119,14 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: _DetailColors.cardBackground,
+        backgroundColor: AppColors.cardBackground,
         title: const Text(
           'Remove Team',
-          style: TextStyle(color: _DetailColors.textPrimary),
+          style: TextStyle(color: AppColors.textPrimary),
         ),
         content: Text(
           'Are you sure you want to remove "$teamName" from this tournament?',
-          style: const TextStyle(color: _DetailColors.textSecondary),
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -2149,7 +2135,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: _DetailColors.error),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Remove'),
           ),
         ],
@@ -2167,7 +2153,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('$teamName removed from tournament'),
-              backgroundColor: _DetailColors.success,
+              backgroundColor: AppColors.success,
             ),
           );
         }
@@ -2176,7 +2162,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error removing team: $e'),
-              backgroundColor: _DetailColors.error,
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -2205,10 +2191,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
 
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
-            backgroundColor: _DetailColors.cardBackground,
+            backgroundColor: AppColors.cardBackground,
             title: Text(
               'Edit $teamName',
-              style: const TextStyle(color: _DetailColors.textPrimary),
+              style: const TextStyle(color: AppColors.textPrimary),
             ),
             content: SingleChildScrollView(
               child: Column(
@@ -2220,8 +2206,8 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: dialogPaymentStatus == PaymentStatus.paid
-                          ? _DetailColors.success.withValues(alpha: 0.1)
-                          : _DetailColors.warning.withValues(alpha: 0.1),
+                          ? AppColors.success.withValues(alpha: 0.1)
+                          : AppColors.warning.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -2231,8 +2217,8 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                               ? Icons.check_circle
                               : Icons.pending,
                           color: dialogPaymentStatus == PaymentStatus.paid
-                              ? _DetailColors.success
-                              : _DetailColors.warning,
+                              ? AppColors.success
+                              : AppColors.warning,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -2243,7 +2229,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                                 'Payment Status',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: _DetailColors.textSecondary,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                               Text(
@@ -2252,8 +2238,8 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: dialogPaymentStatus == PaymentStatus.paid
-                                      ? _DetailColors.success
-                                      : _DetailColors.warning,
+                                      ? AppColors.success
+                                      : AppColors.warning,
                                 ),
                               ),
                             ],
@@ -2261,7 +2247,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                         ),
                         Switch(
                           value: dialogPaymentStatus == PaymentStatus.paid,
-                          activeColor: _DetailColors.success,
+                          activeThumbColor: AppColors.success,
                           onChanged: (value) {
                             setDialogState(() {
                               dialogPaymentStatus = value
@@ -2278,21 +2264,21 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                   // Seed Number
                   TextField(
                     controller: seedController,
-                    style: const TextStyle(color: _DetailColors.textPrimary),
+                    style: const TextStyle(color: AppColors.textPrimary),
                     decoration: InputDecoration(
                       labelText: 'Seed Number',
-                      labelStyle: const TextStyle(color: _DetailColors.textSecondary),
+                      labelStyle: const TextStyle(color: AppColors.textSecondary),
                       hintText: 'e.g., 1, 2, 3',
-                      hintStyle: const TextStyle(color: _DetailColors.textMuted),
+                      hintStyle: const TextStyle(color: AppColors.textMuted),
                       filled: true,
-                      fillColor: _DetailColors.cardBackgroundLight,
+                      fillColor: AppColors.cardBackgroundLight,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide.none,
                       ),
                       prefixIcon: const Icon(
                         Icons.format_list_numbered,
-                        color: _DetailColors.textMuted,
+                        color: AppColors.textMuted,
                       ),
                     ),
                     keyboardType: TextInputType.number,
@@ -2302,21 +2288,21 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                   // Pool Assignment
                   TextField(
                     controller: poolController,
-                    style: const TextStyle(color: _DetailColors.textPrimary),
+                    style: const TextStyle(color: AppColors.textPrimary),
                     decoration: InputDecoration(
                       labelText: 'Pool Assignment',
-                      labelStyle: const TextStyle(color: _DetailColors.textSecondary),
+                      labelStyle: const TextStyle(color: AppColors.textSecondary),
                       hintText: 'e.g., A, B, C',
-                      hintStyle: const TextStyle(color: _DetailColors.textMuted),
+                      hintStyle: const TextStyle(color: AppColors.textMuted),
                       filled: true,
-                      fillColor: _DetailColors.cardBackgroundLight,
+                      fillColor: AppColors.cardBackgroundLight,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide.none,
                       ),
                       prefixIcon: const Icon(
                         Icons.grid_view,
-                        color: _DetailColors.textMuted,
+                        color: AppColors.textMuted,
                       ),
                     ),
                     textCapitalization: TextCapitalization.characters,
@@ -2335,7 +2321,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                   'save': true,
                 }),
                 style: FilledButton.styleFrom(
-                  backgroundColor: _DetailColors.accent,
+                  backgroundColor: AppColors.accent,
                 ),
                 child: const Text('Save'),
               ),
@@ -2362,7 +2348,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('$teamName registration updated'),
-              backgroundColor: _DetailColors.success,
+              backgroundColor: AppColors.success,
             ),
           );
         }
@@ -2371,7 +2357,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error updating registration: $e'),
-              backgroundColor: _DetailColors.error,
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -2436,7 +2422,7 @@ class _MapPlaceholderPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = _DetailColors.divider
+      ..color = AppColors.divider
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
 
@@ -2515,12 +2501,12 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
     final estimatedDuration = _estimatedDuration;
 
     return AlertDialog(
-      backgroundColor: _DetailColors.cardBackground,
+      backgroundColor: AppColors.cardBackground,
       title: Text(
         widget.isPoolPlay
             ? 'Generate Pool Play Schedule'
             : 'Generate Tournament Schedule',
-        style: const TextStyle(color: _DetailColors.textPrimary),
+        style: const TextStyle(color: AppColors.textPrimary),
       ),
       content: SingleChildScrollView(
         child: Column(
@@ -2532,7 +2518,7 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _DetailColors.accent.withValues(alpha: 0.1),
+                  color: AppColors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -2540,13 +2526,13 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.grid_view, color: _DetailColors.accent, size: 20),
+                        Icon(Icons.grid_view, color: AppColors.accent, size: 20),
                         const SizedBox(width: 8),
                         const Text(
                           'Pool Play Format',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: _DetailColors.accent,
+                            color: AppColors.accent,
                           ),
                         ),
                       ],
@@ -2560,7 +2546,7 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
                         'Pool ${entry.key}: ${entry.value.length} teams -> $poolMatches matches',
                         style: const TextStyle(
                           fontSize: 12,
-                          color: _DetailColors.textSecondary,
+                          color: AppColors.textSecondary,
                         ),
                       );
                     }),
@@ -2572,7 +2558,7 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
 
             Text(
               'This will create $totalMatches matches for ${widget.numberOfTeams} teams.',
-              style: const TextStyle(color: _DetailColors.textSecondary),
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
 
@@ -2608,12 +2594,12 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _DetailColors.cardBackgroundLight,
+                  color: AppColors.cardBackgroundLight,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.calendar_today, color: _DetailColors.accent),
+                    const Icon(Icons.calendar_today, color: AppColors.accent),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -2622,7 +2608,7 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
                           const Text(
                             'Start Date & Time',
                             style: TextStyle(
-                              color: _DetailColors.textMuted,
+                              color: AppColors.textMuted,
                               fontSize: 12,
                             ),
                           ),
@@ -2630,14 +2616,14 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
                             '${_startTime.month}/${_startTime.day}/${_startTime.year} '
                             'at ${_startTime.hour}:${_startTime.minute.toString().padLeft(2, '0')}',
                             style: const TextStyle(
-                              color: _DetailColors.textPrimary,
+                              color: AppColors.textPrimary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(Icons.edit, color: _DetailColors.textMuted, size: 18),
+                    const Icon(Icons.edit, color: AppColors.textMuted, size: 18),
                   ],
                 ),
               ),
@@ -2647,7 +2633,7 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
             // Match Duration
             const Text(
               'Match Duration',
-              style: TextStyle(color: _DetailColors.textSecondary, fontSize: 14),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
             const SizedBox(height: 8),
             Row(
@@ -2655,9 +2641,9 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
                 Expanded(
                   child: SliderTheme(
                     data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: _DetailColors.accent,
-                      inactiveTrackColor: _DetailColors.divider,
-                      thumbColor: _DetailColors.accent,
+                      activeTrackColor: AppColors.accent,
+                      inactiveTrackColor: AppColors.divider,
+                      thumbColor: AppColors.accent,
                     ),
                     child: Slider(
                       value: _matchDuration.toDouble(),
@@ -2676,7 +2662,7 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
                   child: Text(
                     '$_matchDuration min',
                     style: const TextStyle(
-                      color: _DetailColors.textPrimary,
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -2688,7 +2674,7 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
             // Number of Courts
             const Text(
               'Number of Courts',
-              style: TextStyle(color: _DetailColors.textSecondary, fontSize: 14),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
             const SizedBox(height: 8),
             Row(
@@ -2696,9 +2682,9 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
                 Expanded(
                   child: SliderTheme(
                     data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: _DetailColors.accent,
-                      inactiveTrackColor: _DetailColors.divider,
-                      thumbColor: _DetailColors.accent,
+                      activeTrackColor: AppColors.accent,
+                      inactiveTrackColor: AppColors.divider,
+                      thumbColor: AppColors.accent,
                     ),
                     child: Slider(
                       value: _numberOfCourts.toDouble(),
@@ -2717,7 +2703,7 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
                   child: Text(
                     '$_numberOfCourts courts',
                     style: const TextStyle(
-                      color: _DetailColors.textPrimary,
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -2729,7 +2715,7 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
             // Scoring Format
             const Text(
               'Scoring Format',
-              style: TextStyle(color: _DetailColors.textSecondary, fontSize: 14),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
             const SizedBox(height: 8),
             ...ScoringFormat.values.map((format) {
@@ -2741,11 +2727,11 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? _DetailColors.accent.withValues(alpha: 0.1)
-                        : _DetailColors.cardBackgroundLight,
+                        ? AppColors.accent.withValues(alpha: 0.1)
+                        : AppColors.cardBackgroundLight,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isSelected ? _DetailColors.accent : _DetailColors.divider,
+                      color: isSelected ? AppColors.accent : AppColors.divider,
                     ),
                   ),
                   child: Row(
@@ -2753,7 +2739,7 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
                       Radio<ScoringFormat>(
                         value: format,
                         groupValue: _scoringFormat,
-                        activeColor: _DetailColors.accent,
+                        activeColor: AppColors.accent,
                         onChanged: (value) {
                           if (value != null) {
                             setState(() => _scoringFormat = value);
@@ -2767,7 +2753,7 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
                             Text(
                               format.displayName,
                               style: TextStyle(
-                                color: _DetailColors.textPrimary,
+                                color: AppColors.textPrimary,
                                 fontWeight: isSelected
                                     ? FontWeight.bold
                                     : FontWeight.normal,
@@ -2777,7 +2763,7 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
                               format.shortDescription,
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: _DetailColors.textMuted,
+                                color: AppColors.textMuted,
                               ),
                             ),
                           ],
@@ -2794,12 +2780,12 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _DetailColors.success.withValues(alpha: 0.1),
+                color: AppColors.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.schedule, color: _DetailColors.success),
+                  const Icon(Icons.schedule, color: AppColors.success),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2808,14 +2794,14 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
                         'Estimated Duration',
                         style: TextStyle(
                           fontSize: 12,
-                          color: _DetailColors.success,
+                          color: AppColors.success,
                         ),
                       ),
                       Text(
                         '${(estimatedDuration / 60).toStringAsFixed(1)} hours',
                         style: const TextStyle(
                           fontSize: 16,
-                          color: _DetailColors.success,
+                          color: AppColors.success,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -2841,7 +2827,7 @@ class _GenerateScheduleDialogState extends State<_GenerateScheduleDialog> {
               'scoringFormat': _scoringFormat,
             });
           },
-          style: FilledButton.styleFrom(backgroundColor: _DetailColors.accent),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
           icon: const Icon(Icons.auto_fix_high),
           label: const Text('Generate'),
         ),

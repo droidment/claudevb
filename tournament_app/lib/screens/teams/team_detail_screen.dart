@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/app_colors.dart';
 import '../../models/team.dart';
 import '../../models/player.dart';
 import '../../services/team_service.dart';
@@ -74,8 +75,15 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Player'),
-        content: Text('Remove ${player.name} from the roster?'),
+        backgroundColor: AppColors.cardBackground,
+        title: const Text(
+          'Delete Player',
+          style: TextStyle(color: AppColors.textPrimary),
+        ),
+        content: Text(
+          'Remove ${player.name} from the roster?',
+          style: const TextStyle(color: AppColors.textSecondary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -83,7 +91,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Delete'),
           ),
         ],
@@ -98,7 +106,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Player removed from roster'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
             ),
           );
         }
@@ -107,7 +115,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error removing player: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -119,9 +127,14 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Team'),
+        backgroundColor: AppColors.cardBackground,
+        title: const Text(
+          'Delete Team',
+          style: TextStyle(color: AppColors.textPrimary),
+        ),
         content: const Text(
           'Are you sure you want to delete this team? This action cannot be undone and will remove all players from the roster.',
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -130,7 +143,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Delete'),
           ),
         ],
@@ -145,7 +158,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Team deleted successfully'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
             ),
           );
         }
@@ -154,7 +167,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error deleting team: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -163,11 +176,11 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Color _getTeamColor() {
-    if (_team?.teamColor == null) return Colors.blue;
+    if (_team?.teamColor == null) return AppColors.accent;
     try {
       return Color(int.parse(_team!.teamColor!.replaceFirst('#', '0xFF')));
     } catch (e) {
-      return Colors.blue;
+      return AppColors.accent;
     }
   }
 
@@ -176,229 +189,24 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
     return '${date.month}/${date.day}/${date.year}';
   }
 
-  Widget _buildRegistrationInfoCard() {
-    // Check if we have any contact or registration info to display
-    final hasAnyInfo =
-        _team!.captainName != null ||
-        _team!.captainEmail != null ||
-        _team!.captainPhone != null ||
-        _team!.contactPerson2 != null ||
-        _team!.registrationDate != null ||
-        _team!.specialRequests != null ||
-        _team!.signedBy != null ||
-        _team!.notes != null ||
-        _team!.category != null ||
-        _team!.playerCount != null;
-
-    if (!hasAnyInfo) {
-      return const SizedBox.shrink();
-    }
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.assignment,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Registration Info',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: 24),
-
-            // Captain Information
-            if (_team!.captainName != null)
-              _buildInfoRow(Icons.person, 'Captain', _team!.captainName!),
-            if (_team!.captainEmail != null)
-              _buildInfoRow(Icons.email, 'Email', _team!.captainEmail!),
-            if (_team!.captainPhone != null)
-              _buildInfoRow(Icons.phone, 'Phone', _team!.captainPhone!),
-            if (_team!.category != null)
-              _buildInfoRow(Icons.category, 'Category', _team!.category!),
-            if (_team!.playerCount != null)
-              _buildInfoRow(
-                Icons.group,
-                'Player Count',
-                '${_team!.playerCount} players',
-              ),
-
-            // Contact Person 2
-            if (_team!.contactPerson2 != null) ...[
-              const Divider(height: 24),
-              _buildInfoRow(
-                Icons.person_outline,
-                'Contact Person 2',
-                _team!.contactPerson2!,
-              ),
-              if (_team!.contactPhone2 != null)
-                _buildInfoRow(
-                  Icons.phone_outlined,
-                  'Phone 2',
-                  _team!.contactPhone2!,
-                ),
-            ],
-
-            // Registration Details
-            if (_team!.registrationDate != null)
-              _buildInfoRow(
-                Icons.calendar_today,
-                'Registered',
-                _formatDate(_team!.registrationDate),
-              ),
-            if (_team!.signedBy != null)
-              _buildInfoRow(Icons.draw, 'Signed By', _team!.signedBy!),
-
-            // Special Requests
-            if (_team!.specialRequests != null &&
-                _team!.specialRequests!.isNotEmpty) ...[
-              const Divider(height: 24),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.note, size: 20, color: Colors.orange[600]),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Special Requests',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.orange.shade200),
-                          ),
-                          child: Text(
-                            _team!.specialRequests!,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-
-            // Notes
-            if (_team!.notes != null && _team!.notes!.isNotEmpty) ...[
-              const Divider(height: 24),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.sticky_note_2, size: 20, color: Colors.blue[600]),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Notes',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue.shade200),
-                          ),
-                          child: Text(
-                            _team!.notes!,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  IconData _getSportIcon() {
+    return _team?.sportType == 'volleyball'
+        ? Icons.sports_volleyball
+        : Icons.sports_tennis;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_team?.name ?? 'Team Details'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: _deleteTeam,
-            tooltip: 'Delete Team',
-          ),
-        ],
-      ),
+      backgroundColor: AppColors.background,
       body: _buildBody(),
       floatingActionButton: _team != null
           ? FloatingActionButton.extended(
               onPressed: () => _showAddPlayerDialog(),
               icon: const Icon(Icons.person_add),
               label: const Text('Add Player'),
+              backgroundColor: AppColors.accent,
+              foregroundColor: Colors.white,
             )
           : null,
     );
@@ -406,7 +214,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.accent),
+      );
     }
 
     if (_error != null || _team == null) {
@@ -414,12 +224,16 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
-            Text('Error: ${_error ?? "Team not found"}'),
+            Text(
+              'Error: ${_error ?? "Team not found"}',
+              style: const TextStyle(color: AppColors.textPrimary),
+            ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            FilledButton(
               onPressed: _loadTeamData,
+              style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
               child: const Text('Retry'),
             ),
           ],
@@ -427,291 +241,623 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
       );
     }
 
-    final teamColor = _getTeamColor();
-
     return RefreshIndicator(
       onRefresh: _loadTeamData,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Team Header
-          Card(
-            color: teamColor.withOpacity(0.1),
+      color: AppColors.accent,
+      child: CustomScrollView(
+        slivers: [
+          _buildHeroHeader(),
+          SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(20),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: teamColor.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: teamColor, width: 4),
-                    ),
-                    child: Center(
-                      child: Text(
-                        _team!.name.substring(0, 1).toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: teamColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _team!.name,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  if (_team!.homeCity != null) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 16,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _team!.homeCity!,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
+                  // Stats cards
+                  _buildStatsRow(),
+                  const SizedBox(height: 24),
+
+                  // Registration Info
+                  if (_hasRegistrationInfo()) ...[
+                    _buildRegistrationInfoSection(),
+                    const SizedBox(height: 24),
                   ],
-                  if (_team!.category != null) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade100,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        _team!.category!,
-                        style: TextStyle(
-                          color: Colors.blue.shade800,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                  // Payment status badges
-                  const SizedBox(height: 12),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      if (_team!.registrationPaid)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade100,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.check_circle,
-                                size: 16,
-                                color: Colors.green.shade700,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'PAID',
-                                style: TextStyle(
-                                  color: Colors.green.shade700,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      else
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade100,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.pending,
-                                size: 16,
-                                color: Colors.orange.shade700,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'PENDING',
-                                style: TextStyle(
-                                  color: Colors.orange.shade700,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (_team!.lunchCount > 0)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.shade100,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.restaurant,
-                                size: 16,
-                                color: Colors.amber.shade800,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${_team!.lunchCount} Lunches',
-                                style: TextStyle(
-                                  color: Colors.amber.shade800,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (_team!.playerCount != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.purple.shade100,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.group,
-                                size: 16,
-                                color: Colors.purple.shade700,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${_team!.playerCount} Players',
-                                style: TextStyle(
-                                  color: Colors.purple.shade700,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
+
+                  // Roster Section
+                  _buildRosterSection(),
+                  const SizedBox(height: 100), // Space for FAB
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 16),
-
-          // Registration Info Section
-          _buildRegistrationInfoCard(),
-          const SizedBox(height: 16),
-
-          // Roster Section
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Roster (${_players.length} players)',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              if (_players.isNotEmpty)
-                Chip(
-                  label: Text('${_players.length}'),
-                  backgroundColor: teamColor.withOpacity(0.2),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          if (_players.isEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.person_add_outlined,
-                      size: 64,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No Players Yet',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Add players to your roster',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            ..._players.map((player) => _buildPlayerCard(player)),
         ],
       ),
     );
   }
 
-  Widget _buildPlayerCard(Player player) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _getTeamColor().withOpacity(0.2),
-          child: Text(
-            player.jerseyNumber?.toString() ?? '?',
+  Widget _buildHeroHeader() {
+    final teamColor = _getTeamColor();
+
+    return SliverAppBar(
+      expandedHeight: 220,
+      pinned: true,
+      backgroundColor: AppColors.background,
+      leading: IconButton(
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.3),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+        ),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+      actions: [
+        PopupMenuButton<String>(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.3),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.more_vert, color: Colors.white, size: 20),
+          ),
+          color: AppColors.cardBackground,
+          onSelected: (value) {
+            if (value == 'delete') {
+              _deleteTeam();
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'delete',
+              child: ListTile(
+                leading: Icon(Icons.delete, color: AppColors.error),
+                title: Text('Delete Team',
+                    style: TextStyle(color: AppColors.error)),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ],
+        ),
+      ],
+      flexibleSpace: FlexibleSpaceBar(
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Gradient Background
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    teamColor.withValues(alpha: 0.6),
+                    AppColors.cardBackgroundLight,
+                  ],
+                ),
+              ),
+            ),
+            // Sport pattern
+            CustomPaint(
+              painter: _SportPatternPainter(_team!.sportType),
+            ),
+            // Large Sport Icon
+            Positioned(
+              right: -30,
+              top: 20,
+              child: Icon(
+                _getSportIcon(),
+                size: 180,
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+            // Bottom gradient for text readability
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 120,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      AppColors.background.withValues(alpha: 0.8),
+                      AppColors.background,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Team Info
+            Positioned(
+              bottom: 16,
+              left: 20,
+              right: 20,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Status badges
+                  Row(
+                    children: [
+                      _buildStatusBadge(
+                        _team!.registrationPaid ? 'PAID' : 'PENDING',
+                        _team!.registrationPaid
+                            ? AppColors.success
+                            : AppColors.warning,
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.cardBackground,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _getSportIcon(),
+                              size: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _team!.sportType[0].toUpperCase() +
+                                  _team!.sportType.substring(1),
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Team Name
+                  Text(
+                    _team!.name,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (_team!.homeCity != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          color: AppColors.textSecondary,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _team!.homeCity!,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
             style: TextStyle(
-              color: _getTeamColor(),
+              color: color,
+              fontSize: 11,
               fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatCard(
+            Icons.group,
+            '${_players.length}',
+            'PLAYERS',
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatCard(
+            Icons.restaurant,
+            '${_team!.lunchCount}',
+            'LUNCHES',
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatCard(
+            Icons.people,
+            '${_team!.playerCount ?? _players.length}',
+            'ROSTER SIZE',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(IconData icon, String value, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: AppColors.accent, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _hasRegistrationInfo() {
+    return _team!.captainName != null ||
+        _team!.captainEmail != null ||
+        _team!.captainPhone != null ||
+        _team!.contactPerson2 != null ||
+        _team!.registrationDate != null ||
+        _team!.specialRequests != null ||
+        _team!.signedBy != null ||
+        _team!.notes != null ||
+        _team!.category != null;
+  }
+
+  Widget _buildRegistrationInfoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Registration Info',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              // Captain Information
+              if (_team!.captainName != null)
+                _buildInfoRow(Icons.person, 'Captain', _team!.captainName!),
+              if (_team!.captainEmail != null)
+                _buildInfoRow(Icons.email, 'Email', _team!.captainEmail!),
+              if (_team!.captainPhone != null)
+                _buildInfoRow(Icons.phone, 'Phone', _team!.captainPhone!),
+              if (_team!.category != null)
+                _buildInfoRow(Icons.category, 'Category', _team!.category!),
+
+              // Contact Person 2
+              if (_team!.contactPerson2 != null) ...[
+                _buildInfoRow(
+                  Icons.person_outline,
+                  'Contact Person 2',
+                  _team!.contactPerson2!,
+                ),
+                if (_team!.contactPhone2 != null)
+                  _buildInfoRow(
+                    Icons.phone_outlined,
+                    'Phone 2',
+                    _team!.contactPhone2!,
+                  ),
+              ],
+
+              // Registration Details
+              if (_team!.registrationDate != null)
+                _buildInfoRow(
+                  Icons.calendar_today,
+                  'Registered',
+                  _formatDate(_team!.registrationDate),
+                ),
+              if (_team!.signedBy != null)
+                _buildInfoRow(Icons.draw, 'Signed By', _team!.signedBy!),
+
+              // Special Requests
+              if (_team!.specialRequests != null &&
+                  _team!.specialRequests!.isNotEmpty)
+                _buildNotesRow(
+                  Icons.note,
+                  'Special Requests',
+                  _team!.specialRequests!,
+                  AppColors.warning,
+                ),
+
+              // Notes
+              if (_team!.notes != null && _team!.notes!.isNotEmpty)
+                _buildNotesRow(
+                  Icons.sticky_note_2,
+                  'Notes',
+                  _team!.notes!,
+                  AppColors.accent,
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: AppColors.divider),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: AppColors.textMuted),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotesRow(
+      IconData icon, String label, String value, Color accentColor) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: accentColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: accentColor.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRosterSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Roster',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${_players.length} players',
+                style: const TextStyle(
+                  color: AppColors.accent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (_players.isEmpty)
+          _buildEmptyRosterCard()
+        else
+          ..._players.map((player) => _buildPlayerCard(player)),
+      ],
+    );
+  }
+
+  Widget _buildEmptyRosterCard() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Column(
+          children: [
+            const Icon(
+              Icons.person_add_outlined,
+              size: 64,
+              color: AppColors.textMuted,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'No Players Yet',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Add players to your roster',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlayerCard(Player player) {
+    final teamColor = _getTeamColor();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: teamColor.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: teamColor.withValues(alpha: 0.5),
+              width: 2,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              player.jerseyNumber?.toString() ?? '?',
+              style: TextStyle(
+                color: teamColor,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ),
         title: Text(
           player.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         subtitle: Text(
           [
@@ -721,16 +867,19 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
               )?.displayName,
             if (player.heightInches != null) player.heightFormatted,
           ].where((e) => e != null).join(' • '),
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
-        trailing: PopupMenuButton(
+        trailing: PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: AppColors.textMuted),
+          color: AppColors.cardBackground,
           itemBuilder: (context) => [
             const PopupMenuItem(
               value: 'edit',
               child: Row(
                 children: [
-                  Icon(Icons.edit, size: 20),
+                  Icon(Icons.edit, size: 20, color: AppColors.textSecondary),
                   SizedBox(width: 12),
-                  Text('Edit'),
+                  Text('Edit', style: TextStyle(color: AppColors.textPrimary)),
                 ],
               ),
             ),
@@ -738,9 +887,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
               value: 'delete',
               child: Row(
                 children: [
-                  Icon(Icons.delete, size: 20, color: Colors.red),
+                  Icon(Icons.delete, size: 20, color: AppColors.error),
                   SizedBox(width: 12),
-                  Text('Delete', style: TextStyle(color: Colors.red)),
+                  Text('Delete', style: TextStyle(color: AppColors.error)),
                 ],
               ),
             ),
@@ -756,6 +905,30 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
       ),
     );
   }
+}
+
+/// Custom painter for sport pattern background
+class _SportPatternPainter extends CustomPainter {
+  final String sportType;
+
+  _SportPatternPainter(this.sportType);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.05)
+      ..style = PaintingStyle.fill;
+
+    // Draw scattered sport-related shapes
+    for (var i = 0; i < 8; i++) {
+      final x = (i * 0.15 + 0.05) * size.width;
+      final y = (i % 3 * 0.3 + 0.1) * size.height;
+      canvas.drawCircle(Offset(x, y), 20, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // Add Player Dialog
@@ -827,7 +1000,7 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Player added successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
       }
@@ -836,7 +1009,7 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error adding player: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -850,20 +1023,20 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add Player'),
+      backgroundColor: AppColors.cardBackground,
+      title: const Text(
+        'Add Player',
+        style: TextStyle(color: AppColors.textPrimary),
+      ),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
+              _buildTextField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name *',
-                  border: OutlineInputBorder(),
-                ),
-                textCapitalization: TextCapitalization.words,
+                label: 'Name *',
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Required';
@@ -872,52 +1045,54 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
                 },
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              _buildTextField(
                 controller: _jerseyController,
-                decoration: const InputDecoration(
-                  labelText: 'Jersey Number',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Jersey Number',
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<VolleyballPosition>(
-                initialValue: _selectedPosition,
-                decoration: const InputDecoration(
-                  labelText: 'Position',
-                  border: OutlineInputBorder(),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackgroundLight,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                items: VolleyballPosition.values.map((position) {
-                  return DropdownMenuItem(
-                    value: position,
-                    child: Text(position.displayName),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => _selectedPosition = value);
-                },
+                child: DropdownButtonFormField<VolleyballPosition>(
+                  initialValue: _selectedPosition,
+                  dropdownColor: AppColors.cardBackground,
+                  decoration: const InputDecoration(
+                    labelText: 'Position',
+                    labelStyle: TextStyle(color: AppColors.textSecondary),
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  style: const TextStyle(color: AppColors.textPrimary),
+                  items: VolleyballPosition.values.map((position) {
+                    return DropdownMenuItem(
+                      value: position,
+                      child: Text(position.displayName),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() => _selectedPosition = value);
+                  },
+                ),
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
+                    child: _buildTextField(
                       controller: _heightFeetController,
-                      decoration: const InputDecoration(
-                        labelText: 'Height (ft)',
-                        border: OutlineInputBorder(),
-                      ),
+                      label: 'Height (ft)',
                       keyboardType: TextInputType.number,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: TextFormField(
+                    child: _buildTextField(
                       controller: _heightInchesController,
-                      decoration: const InputDecoration(
-                        labelText: 'Height (in)',
-                        border: OutlineInputBorder(),
-                      ),
+                      label: 'Height (in)',
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -934,15 +1109,45 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
         ),
         FilledButton(
           onPressed: _isLoading ? null : () => _addPlayer(widget.teamId),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
           child: _isLoading
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
               : const Text('Add'),
         ),
       ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      style: const TextStyle(color: AppColors.textPrimary),
+      keyboardType: keyboardType,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        filled: true,
+        fillColor: AppColors.cardBackgroundLight,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
     );
   }
 }
@@ -1030,7 +1235,7 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Player updated successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
       }
@@ -1039,7 +1244,7 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error updating player: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -1053,20 +1258,20 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Edit Player'),
+      backgroundColor: AppColors.cardBackground,
+      title: const Text(
+        'Edit Player',
+        style: TextStyle(color: AppColors.textPrimary),
+      ),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
+              _buildTextField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name *',
-                  border: OutlineInputBorder(),
-                ),
-                textCapitalization: TextCapitalization.words,
+                label: 'Name *',
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Required';
@@ -1075,52 +1280,54 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
                 },
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              _buildTextField(
                 controller: _jerseyController,
-                decoration: const InputDecoration(
-                  labelText: 'Jersey Number',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Jersey Number',
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<VolleyballPosition>(
-                initialValue: _selectedPosition,
-                decoration: const InputDecoration(
-                  labelText: 'Position',
-                  border: OutlineInputBorder(),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackgroundLight,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                items: VolleyballPosition.values.map((position) {
-                  return DropdownMenuItem(
-                    value: position,
-                    child: Text(position.displayName),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => _selectedPosition = value);
-                },
+                child: DropdownButtonFormField<VolleyballPosition>(
+                  initialValue: _selectedPosition,
+                  dropdownColor: AppColors.cardBackground,
+                  decoration: const InputDecoration(
+                    labelText: 'Position',
+                    labelStyle: TextStyle(color: AppColors.textSecondary),
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  style: const TextStyle(color: AppColors.textPrimary),
+                  items: VolleyballPosition.values.map((position) {
+                    return DropdownMenuItem(
+                      value: position,
+                      child: Text(position.displayName),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() => _selectedPosition = value);
+                  },
+                ),
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
+                    child: _buildTextField(
                       controller: _heightFeetController,
-                      decoration: const InputDecoration(
-                        labelText: 'Height (ft)',
-                        border: OutlineInputBorder(),
-                      ),
+                      label: 'Height (ft)',
                       keyboardType: TextInputType.number,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: TextFormField(
+                    child: _buildTextField(
                       controller: _heightInchesController,
-                      decoration: const InputDecoration(
-                        labelText: 'Height (in)',
-                        border: OutlineInputBorder(),
-                      ),
+                      label: 'Height (in)',
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -1137,15 +1344,45 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
         ),
         FilledButton(
           onPressed: _isLoading ? null : _updatePlayer,
+          style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
           child: _isLoading
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
               : const Text('Save'),
         ),
       ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      style: const TextStyle(color: AppColors.textPrimary),
+      keyboardType: keyboardType,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        filled: true,
+        fillColor: AppColors.cardBackgroundLight,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
     );
   }
 }
