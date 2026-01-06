@@ -3,10 +3,12 @@ import '../services/auth_service.dart';
 import '../services/match_service.dart';
 import '../models/user_profile.dart';
 import '../theme/theme.dart';
+import '../main.dart';
 import 'tournaments/organize_screen.dart';
 import 'tournaments/tournaments_list_screen.dart';
 import 'tournaments/join_by_invite_screen.dart';
 import 'teams/teams_list_screen.dart';
+import 'notifications/notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +30,17 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadUserProfile();
+    notificationService.addListener(_onNotificationsChanged);
+  }
+
+  @override
+  void dispose() {
+    notificationService.removeListener(_onNotificationsChanged);
+    super.dispose();
+  }
+
+  void _onNotificationsChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadUserProfile() async {
@@ -823,6 +836,51 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildNotificationBell(AppColorPalette colors, {Color? iconColor}) {
+    final unreadCount = notificationService.unreadCount;
+    final color = iconColor ?? colors.textPrimary;
+
+    return Stack(
+      children: [
+        IconButton(
+          icon: Icon(Icons.notifications_outlined, color: color),
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const NotificationsScreen(),
+              ),
+            );
+          },
+        ),
+        if (unreadCount > 0)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: colors.error,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(
+                minWidth: 16,
+                minHeight: 16,
+              ),
+              child: Text(
+                unreadCount > 9 ? '9+' : unreadCount.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -847,10 +905,7 @@ class _HomeScreenState extends State<HomeScreen> {
               foregroundColor: colors.textPrimary,
               actions: currentLabel == 'Profile'
                   ? [
-                      IconButton(
-                        icon: const Icon(Icons.notifications_outlined),
-                        onPressed: () {},
-                      ),
+                      _buildNotificationBell(colors),
                     ]
                   : null,
             )
@@ -865,10 +920,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               actions: [
-                IconButton(
-                  icon: Icon(Icons.notifications_outlined, color: colors.accent),
-                  onPressed: () {},
-                ),
+                _buildNotificationBell(colors, iconColor: colors.accent),
                 IconButton(
                   icon: Container(
                     width: 32,

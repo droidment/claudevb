@@ -23,6 +23,7 @@ import 'scoring_config_screen.dart';
 import 'manage_staff_screen.dart';
 import '../../models/scoring_config.dart';
 import '../../theme/theme.dart';
+import '../../main.dart';
 
 class TournamentDetailScreen extends StatefulWidget {
   final String tournamentId;
@@ -758,57 +759,40 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
   }
 
   Widget _buildScheduleSection(AppColorPalette colors) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return _CollapsibleSection(
+      title: 'Schedule',
+      icon: Icons.calendar_month,
+      subtitle: '${_formatDate(_tournament!.startDate)} - ${_formatDate(_tournament!.endDate)}',
+      colors: colors,
       children: [
-        Text(
-          'Schedule',
-          style: TextStyle(
-            color: colors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+        // Registration Deadline
+        _buildTimelineItem(
+          icon: Icons.how_to_reg,
+          iconColor: colors.error,
+          title: 'DEADLINE',
+          date: _formatDate(_tournament!.registrationDeadline),
+          subtitle: 'Team registration closes',
+          isFirst: true,
+          colors: colors,
         ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: colors.cardBackground,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              // Registration Deadline
-              _buildTimelineItem(
-                icon: Icons.how_to_reg,
-                iconColor: colors.error,
-                title: 'DEADLINE',
-                date: _formatDate(_tournament!.registrationDeadline),
-                subtitle: 'Team registration closes',
-                isFirst: true,
-                colors: colors,
-              ),
-              // Start Date
-              _buildTimelineItem(
-                icon: Icons.play_circle_outline,
-                iconColor: colors.accent,
-                title: 'KICKOFF',
-                date: _formatDate(_tournament!.startDate),
-                subtitle: 'Tournament begins',
-                colors: colors,
-              ),
-              // End Date
-              _buildTimelineItem(
-                icon: Icons.emoji_events,
-                iconColor: colors.warning,
-                title: 'FINALS',
-                date: _formatDate(_tournament!.endDate),
-                subtitle: 'Championship game',
-                isLast: true,
-                colors: colors,
-              ),
-            ],
-          ),
+        // Start Date
+        _buildTimelineItem(
+          icon: Icons.play_circle_outline,
+          iconColor: colors.accent,
+          title: 'KICKOFF',
+          date: _formatDate(_tournament!.startDate),
+          subtitle: 'Tournament begins',
+          colors: colors,
+        ),
+        // End Date
+        _buildTimelineItem(
+          icon: Icons.emoji_events,
+          iconColor: colors.warning,
+          title: 'FINALS',
+          date: _formatDate(_tournament!.endDate),
+          subtitle: 'Championship game',
+          isLast: true,
+          colors: colors,
         ),
       ],
     );
@@ -896,35 +880,23 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
   }
 
   Widget _buildLocationSection(AppColorPalette colors) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Location',
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                // Open maps
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Maps integration coming soon!')),
-                );
-              },
-              child: Text(
-                'Get Directions',
-                style: TextStyle(color: colors.accent),
-              ),
-            ),
-          ],
+    return _CollapsibleSection(
+      title: 'Location',
+      icon: Icons.location_on,
+      subtitle: _tournament!.location!,
+      colors: colors,
+      trailing: TextButton(
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Maps integration coming soon!')),
+          );
+        },
+        child: Text(
+          'Get Directions',
+          style: TextStyle(color: colors.accent, fontSize: 12),
         ),
-        const SizedBox(height: 12),
+      ),
+      children: [
         // Map Placeholder
         Container(
           height: 150,
@@ -934,7 +906,6 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
           ),
           child: Stack(
             children: [
-              // Placeholder map pattern
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: CustomPaint(
@@ -942,7 +913,6 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
                   painter: _MapPlaceholderPainter(colors),
                 ),
               ),
-              // Map pin
               Center(
                 child: Icon(
                   Icons.location_on,
@@ -958,7 +928,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colors.cardBackground,
+            color: colors.cardBackgroundLight,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -1010,21 +980,19 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
   }
 
   Widget _buildTeamRequirementsSection(AppColorPalette colors) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final slotsInfo = _tournament!.maxTeams != null
+        ? '${_registeredTeams.length}/${_tournament!.maxTeams} teams'
+        : '${_registeredTeams.length} teams';
+
+    return _CollapsibleSection(
+      title: 'Team Requirements',
+      icon: Icons.groups,
+      subtitle: slotsInfo,
+      colors: colors,
       children: [
-        Text(
-          'Team Requirements',
-          style: TextStyle(
-            color: colors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: colors.cardBackground,
+            color: colors.cardBackgroundLight,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -1359,28 +1327,33 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
     VoidCallback onTap,
     AppColorPalette colors,
   ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: colors.cardBackgroundLight,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: colors.divider),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: colors.textSecondary),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 13,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: colors.accent.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: colors.accent.withValues(alpha: 0.4)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 18, color: colors.accent),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: colors.accent,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -2121,6 +2094,14 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
 
       await _loadRegisteredTeams();
 
+      // Add notification for schedule generation
+      final notification = notificationService.createScheduleGeneratedNotification(
+        tournamentId: widget.tournamentId,
+        tournamentName: _tournament!.name,
+        matchCount: matchesData.length,
+      );
+      await notificationService.addNotification(notification);
+
       if (mounted) {
         final successColors = context.colors;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2272,6 +2253,14 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
       if (mounted) Navigator.of(context).pop(); // Close loading dialog
 
       await _loadRegisteredTeams();
+
+      // Add notification for team removal
+      final notification = notificationService.createTeamRemovedNotification(
+        tournamentId: widget.tournamentId,
+        tournamentName: _tournament!.name,
+        teamName: teamName,
+      );
+      await notificationService.addNotification(notification);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2629,6 +2618,14 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> {
 
       await _loadRegisteredTeams();
 
+      // Add notification for team registration
+      final notification = notificationService.createTeamRegisteredNotification(
+        tournamentId: widget.tournamentId,
+        tournamentName: _tournament!.name,
+        teamName: selectedTeam.name,
+      );
+      await notificationService.addNotification(notification);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2770,6 +2767,184 @@ class _TeamSelectionSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+}
+
+/// Collapsible section widget for expandable content
+class _CollapsibleSection extends StatefulWidget {
+  final String title;
+  final IconData icon;
+  final String subtitle;
+  final AppColorPalette colors;
+  final List<Widget> children;
+  final Widget? trailing;
+  final bool initiallyExpanded;
+
+  const _CollapsibleSection({
+    required this.title,
+    required this.icon,
+    required this.subtitle,
+    required this.colors,
+    required this.children,
+    this.trailing,
+    this.initiallyExpanded = true,
+  });
+
+  @override
+  State<_CollapsibleSection> createState() => _CollapsibleSectionState();
+}
+
+class _CollapsibleSectionState extends State<_CollapsibleSection>
+    with SingleTickerProviderStateMixin {
+  late bool _isExpanded;
+  late AnimationController _controller;
+  late Animation<double> _iconTurns;
+  late Animation<double> _heightFactor;
+
+  @override
+  void initState() {
+    super.initState();
+    _isExpanded = widget.initiallyExpanded;
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _iconTurns = Tween<double>(begin: 0.0, end: 0.5).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _heightFactor = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
+
+    if (_isExpanded) {
+      _controller.value = 1.0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _controller.forward();
+      } else {
+        _controller.reverse();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = widget.colors;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header (always visible)
+          InkWell(
+            onTap: _handleTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // Icon
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: colors.accent.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      widget.icon,
+                      color: colors.accent,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Title and subtitle
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.title,
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.subtitle,
+                          style: TextStyle(
+                            color: colors.textMuted,
+                            fontSize: 13,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Trailing widget (optional)
+                  if (widget.trailing != null) widget.trailing!,
+                  // Expand/collapse icon
+                  RotationTransition(
+                    turns: _iconTurns,
+                    child: Icon(
+                      Icons.expand_more,
+                      color: colors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Expandable content
+          ClipRect(
+            child: AnimatedBuilder(
+              animation: _heightFactor,
+              builder: (context, child) {
+                return Align(
+                  alignment: Alignment.topCenter,
+                  heightFactor: _heightFactor.value,
+                  child: child,
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  bottom: 16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Divider(color: colors.divider, height: 1),
+                    const SizedBox(height: 16),
+                    ...widget.children,
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

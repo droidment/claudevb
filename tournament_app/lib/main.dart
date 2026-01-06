@@ -5,8 +5,10 @@ import 'screens/auth/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'core/supabase_client.dart';
 import 'theme/theme_provider.dart';
+import 'services/notification_service.dart';
 
 final themeProvider = ThemeProvider();
+final notificationService = NotificationService();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -676,9 +676,6 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
     final teamColor = teamData['team_color'] as String?;
     final seedNumber = registration['seed_number'] as int?;
     final poolAssignment = registration['pool_assignment'] as String?;
-    final paymentStatus =
-        registration['payment_status'] as String? ?? 'pending';
-    final isPaid = paymentStatus == 'paid';
 
     Color avatarColor = colors.accent;
     if (teamColor != null) {
@@ -783,22 +780,6 @@ class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (isPaid)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: colors.successLight,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'PAID',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: colors.success,
-                            ),
-                          ),
-                        ),
                     ],
                   ),
                   if (poolAssignment != null || homeCity != null)
