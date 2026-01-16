@@ -5,6 +5,7 @@ import 'app_colors.dart';
 enum AppThemeType {
   gridsterGP,
   classicBlue,
+  oceanMint,
   // More themes will be added here
 }
 
@@ -16,6 +17,8 @@ extension AppThemeTypeExtension on AppThemeType {
         return 'GridsterGP';
       case AppThemeType.classicBlue:
         return 'Classic Blue';
+      case AppThemeType.oceanMint:
+        return 'Ocean Mint';
     }
   }
 
@@ -25,6 +28,8 @@ extension AppThemeTypeExtension on AppThemeType {
         return 'Violet & Lime branding';
       case AppThemeType.classicBlue:
         return 'Original blue theme';
+      case AppThemeType.oceanMint:
+        return 'Corporate mint & navy';
     }
   }
 
@@ -34,6 +39,8 @@ extension AppThemeTypeExtension on AppThemeType {
         return AppColors.violet;
       case AppThemeType.classicBlue:
         return Colors.blue;
+      case AppThemeType.oceanMint:
+        return const Color(0xFF002C3F); // Core Navy
     }
   }
 
@@ -43,6 +50,8 @@ extension AppThemeTypeExtension on AppThemeType {
         return AppColors.lime;
       case AppThemeType.classicBlue:
         return Colors.orange;
+      case AppThemeType.oceanMint:
+        return const Color(0xFF36ECDE); // Neon Mint
     }
   }
 }
@@ -58,6 +67,8 @@ class AppThemes {
         return _gridsterGPTheme();
       case AppThemeType.classicBlue:
         return _classicBlueTheme();
+      case AppThemeType.oceanMint:
+        return _oceanMintTheme();
     }
   }
 
@@ -237,6 +248,101 @@ class AppThemes {
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         selectedItemColor: primaryBlue,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+      ),
+      useMaterial3: true,
+    );
+  }
+
+  /// Ocean Mint theme (Neon Mint & Core Navy)
+  static ThemeData _oceanMintTheme() {
+    const neonMint = Color(0xFF36ECDE);
+    const coreNavy = Color(0xFF002C3F);
+    const softGray = Color(0xFFE6E9EC);
+    const graphiteBlack = Color(0xFF2F2F2F);
+
+    return ThemeData(
+      colorScheme: ColorScheme(
+        brightness: Brightness.light,
+        primary: coreNavy,
+        onPrimary: Colors.white,
+        primaryContainer: coreNavy.withOpacity(0.1),
+        onPrimaryContainer: coreNavy,
+        secondary: neonMint,
+        onSecondary: graphiteBlack,
+        secondaryContainer: neonMint.withOpacity(0.15),
+        onSecondaryContainer: graphiteBlack,
+        tertiary: neonMint,
+        onTertiary: graphiteBlack,
+        error: Colors.red.shade700,
+        onError: Colors.white,
+        surface: Colors.white,
+        onSurface: graphiteBlack,
+        surfaceContainerHighest: softGray,
+        outline: softGray,
+      ),
+      scaffoldBackgroundColor: Colors.white,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: coreNavy,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: neonMint,
+        foregroundColor: graphiteBlack,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: coreNavy,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: coreNavy,
+          side: const BorderSide(color: coreNavy),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: coreNavy,
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: neonMint, width: 2),
+        ),
+        floatingLabelStyle: const TextStyle(color: coreNavy),
+      ),
+      cardTheme: CardTheme(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: neonMint.withOpacity(0.15),
+        selectedColor: neonMint,
+        labelStyle: const TextStyle(color: graphiteBlack),
+        secondaryLabelStyle: const TextStyle(color: graphiteBlack),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        selectedItemColor: coreNavy,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
       ),
