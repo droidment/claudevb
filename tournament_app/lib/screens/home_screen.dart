@@ -5,6 +5,7 @@ import 'tournaments/organize_screen.dart';
 import 'tournaments/tournaments_list_screen.dart';
 import 'tournaments/join_by_invite_screen.dart';
 import 'teams/teams_list_screen.dart';
+import 'settings/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -255,6 +256,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
           const SizedBox(height: 32),
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.settings),
+            label: const Text('Settings'),
+          ),
+          const SizedBox(height: 12),
           ElevatedButton.icon(
             onPressed: _handleLogout,
             icon: const Icon(Icons.logout),
