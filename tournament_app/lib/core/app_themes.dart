@@ -6,6 +6,7 @@ enum AppThemeType {
   gridsterGP,
   classicBlue,
   oceanMint,
+  floralGarden,
   // More themes will be added here
 }
 
@@ -19,6 +20,8 @@ extension AppThemeTypeExtension on AppThemeType {
         return 'Classic Blue';
       case AppThemeType.oceanMint:
         return 'Ocean Mint';
+      case AppThemeType.floralGarden:
+        return 'Floral Garden';
     }
   }
 
@@ -30,6 +33,8 @@ extension AppThemeTypeExtension on AppThemeType {
         return 'Original blue theme';
       case AppThemeType.oceanMint:
         return 'Corporate mint & navy';
+      case AppThemeType.floralGarden:
+        return 'Soft pastel garden';
     }
   }
 
@@ -41,6 +46,8 @@ extension AppThemeTypeExtension on AppThemeType {
         return Colors.blue;
       case AppThemeType.oceanMint:
         return const Color(0xFF002C3F); // Core Navy
+      case AppThemeType.floralGarden:
+        return const Color(0xFF78769C); // Benimidori Purple
     }
   }
 
@@ -52,6 +59,8 @@ extension AppThemeTypeExtension on AppThemeType {
         return Colors.orange;
       case AppThemeType.oceanMint:
         return const Color(0xFF36ECDE); // Neon Mint
+      case AppThemeType.floralGarden:
+        return const Color(0xFFDB9ED3); // Chateau Rose
     }
   }
 }
@@ -69,6 +78,8 @@ class AppThemes {
         return _classicBlueTheme();
       case AppThemeType.oceanMint:
         return _oceanMintTheme();
+      case AppThemeType.floralGarden:
+        return _floralGardenTheme();
     }
   }
 
@@ -344,6 +355,104 @@ class AppThemes {
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         selectedItemColor: coreNavy,
         unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+      ),
+      useMaterial3: true,
+    );
+  }
+
+  /// Floral Garden theme (Soft Pastels)
+  static ThemeData _floralGardenTheme() {
+    const galena = Color(0xFF62786D); // Sage green
+    const dustStorm = Color(0xFFE1CEC0); // Warm beige
+    const chateauRose = Color(0xFFDB9ED3); // Soft pink
+    const laVibes = Color(0xFFEDCCE0); // Light lavender
+    const benimidoriPurple = Color(0xFF78769C); // Muted purple
+
+    return ThemeData(
+      colorScheme: ColorScheme(
+        brightness: Brightness.light,
+        primary: benimidoriPurple,
+        onPrimary: Colors.white,
+        primaryContainer: laVibes,
+        onPrimaryContainer: benimidoriPurple,
+        secondary: chateauRose,
+        onSecondary: Colors.white,
+        secondaryContainer: chateauRose.withOpacity(0.2),
+        onSecondaryContainer: benimidoriPurple,
+        tertiary: galena,
+        onTertiary: Colors.white,
+        error: Colors.red.shade400,
+        onError: Colors.white,
+        surface: Colors.white,
+        onSurface: const Color(0xFF4A4A4A),
+        surfaceContainerHighest: dustStorm,
+        outline: galena.withOpacity(0.3),
+      ),
+      scaffoldBackgroundColor: const Color(0xFFFFFAF8),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: benimidoriPurple,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: chateauRose,
+        foregroundColor: Colors.white,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: benimidoriPurple,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: benimidoriPurple,
+          side: const BorderSide(color: benimidoriPurple),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: benimidoriPurple,
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: chateauRose, width: 2),
+        ),
+        floatingLabelStyle: const TextStyle(color: benimidoriPurple),
+      ),
+      cardTheme: CardTheme(
+        elevation: 2,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: laVibes.withOpacity(0.3),
+        selectedColor: chateauRose,
+        labelStyle: const TextStyle(color: Color(0xFF4A4A4A)),
+        secondaryLabelStyle: const TextStyle(color: Colors.white),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        selectedItemColor: benimidoriPurple,
+        unselectedItemColor: Colors.grey,
+        backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
       ),
       useMaterial3: true,
