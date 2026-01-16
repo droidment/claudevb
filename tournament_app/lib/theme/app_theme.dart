@@ -4,6 +4,9 @@ import 'app_colors.dart';
 enum AppThemeType {
   dark,
   spring,
+  midnightMint,
+  neonNight,
+  duskGarden,
 }
 
 extension AppThemeTypeExtension on AppThemeType {
@@ -13,6 +16,12 @@ extension AppThemeTypeExtension on AppThemeType {
         return 'Dark';
       case AppThemeType.spring:
         return 'Spring';
+      case AppThemeType.midnightMint:
+        return 'Midnight Mint';
+      case AppThemeType.neonNight:
+        return 'Neon Night';
+      case AppThemeType.duskGarden:
+        return 'Dusk Garden';
     }
   }
 
@@ -22,6 +31,12 @@ extension AppThemeTypeExtension on AppThemeType {
         return Icons.dark_mode;
       case AppThemeType.spring:
         return Icons.local_florist;
+      case AppThemeType.midnightMint:
+        return Icons.water_drop;
+      case AppThemeType.neonNight:
+        return Icons.electric_bolt;
+      case AppThemeType.duskGarden:
+        return Icons.nightlight_round;
     }
   }
 
@@ -31,6 +46,12 @@ extension AppThemeTypeExtension on AppThemeType {
         return const DarkColorPalette();
       case AppThemeType.spring:
         return const SpringColorPalette();
+      case AppThemeType.midnightMint:
+        return const MidnightMintColorPalette();
+      case AppThemeType.neonNight:
+        return const NeonNightColorPalette();
+      case AppThemeType.duskGarden:
+        return const DuskGardenColorPalette();
     }
   }
 }
@@ -48,12 +69,33 @@ class AppTheme {
     return _buildTheme(colors);
   }
 
+  static ThemeData midnightMintTheme() {
+    const colors = MidnightMintColorPalette();
+    return _buildTheme(colors);
+  }
+
+  static ThemeData neonNightTheme() {
+    const colors = NeonNightColorPalette();
+    return _buildTheme(colors);
+  }
+
+  static ThemeData duskGardenTheme() {
+    const colors = DuskGardenColorPalette();
+    return _buildTheme(colors);
+  }
+
   static ThemeData getTheme(AppThemeType type) {
     switch (type) {
       case AppThemeType.dark:
         return darkTheme();
       case AppThemeType.spring:
         return springTheme();
+      case AppThemeType.midnightMint:
+        return midnightMintTheme();
+      case AppThemeType.neonNight:
+        return neonNightTheme();
+      case AppThemeType.duskGarden:
+        return duskGardenTheme();
     }
   }
 

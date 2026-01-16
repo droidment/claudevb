@@ -26,28 +26,39 @@ void showThemeSelector(BuildContext context) {
   showModalBottomSheet(
     context: context,
     backgroundColor: colors.cardBackground,
+    isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (context) => const ThemeSelectorSheet(),
+    builder: (context) => DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) => ThemeSelectorSheet(
+        scrollController: scrollController,
+      ),
+    ),
   );
 }
 
 /// The bottom sheet content for theme selection
 class ThemeSelectorSheet extends StatelessWidget {
-  const ThemeSelectorSheet({super.key});
+  final ScrollController? scrollController;
+
+  const ThemeSelectorSheet({super.key, this.scrollController});
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.themeProvider;
     final colors = themeProvider.colors;
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      color: colors.cardBackground,
+      child: SafeArea(
+        child: ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.all(24),
           children: [
             Row(
               children: [
@@ -167,6 +178,12 @@ class _ThemeOption extends StatelessWidget {
         return 'Dark mode with blue accents';
       case AppThemeType.spring:
         return 'Light green nature-inspired';
+      case AppThemeType.midnightMint:
+        return 'Deep navy with neon mint';
+      case AppThemeType.neonNight:
+        return 'Dark purple with lime accents';
+      case AppThemeType.duskGarden:
+        return 'Soft pastels on dark canvas';
     }
   }
 }

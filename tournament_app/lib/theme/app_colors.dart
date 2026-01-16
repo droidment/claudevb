@@ -147,6 +147,94 @@ class DarkColorPalette implements AppColorPalette {
   bool get isDark => true;
 }
 
+/// Midnight Mint theme colors - Ocean corporate dark palette
+class MidnightMintColors {
+  MidnightMintColors._();
+
+  // Backgrounds - Based on Core Navy (#00203F)
+  static const Color background = Color(0xFF00203F);
+  static const Color cardBackground = Color(0xFF002C4F);
+  static const Color cardBackgroundLight = Color(0xFF003A5F);
+  static const Color searchBackground = Color(0xFF004570);
+  static const Color divider = Color(0xFF004570);
+
+  // Text
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFFE6E9EC);  // Soft Gray
+  static const Color textMuted = Color(0xFF8BA3B5);
+
+  // Accent - Neon Mint (#36ECDE)
+  static const Color accent = Color(0xFF36ECDE);
+
+  // Status
+  static const Color success = Color(0xFF36ECDE);
+  static const Color warning = Color(0xFFFFD54F);
+  static const Color error = Color(0xFFFF6B6B);
+
+  // Sport colors
+  static const Color volleyballPrimary = Color(0xFF36ECDE);
+  static const Color pickleballPrimary = Color(0xFF4DD0E1);
+}
+
+/// Neon Night theme colors - GridsterGP dark palette
+class NeonNightColors {
+  NeonNightColors._();
+
+  // Backgrounds - Based on Black (#000000)
+  static const Color background = Color(0xFF0A0A0A);
+  static const Color cardBackground = Color(0xFF1A1A2E);
+  static const Color cardBackgroundLight = Color(0xFF25253A);
+  static const Color searchBackground = Color(0xFF2D2D44);
+  static const Color divider = Color(0xFF3D3D5C);
+
+  // Text
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFFB8B8D0);
+  static const Color textMuted = Color(0xFF7A7A99);
+
+  // Accent - Violet (#7D39EB)
+  static const Color accent = Color(0xFF7D39EB);
+  static const Color accentSecondary = Color(0xFFC6FF33);  // Lime
+
+  // Status
+  static const Color success = Color(0xFFC6FF33);  // Lime for success
+  static const Color warning = Color(0xFFFFD93D);
+  static const Color error = Color(0xFFFF5757);
+
+  // Sport colors
+  static const Color volleyballPrimary = Color(0xFFC6FF33);  // Lime
+  static const Color pickleballPrimary = Color(0xFF7D39EB);  // Violet
+}
+
+/// Dusk Garden theme colors - Floral Garden dark palette
+class DuskGardenColors {
+  DuskGardenColors._();
+
+  // Backgrounds - Based on Benimidori Purple and Galena
+  static const Color background = Color(0xFF1E1D2A);
+  static const Color cardBackground = Color(0xFF2A2838);
+  static const Color cardBackgroundLight = Color(0xFF363445);
+  static const Color searchBackground = Color(0xFF403E52);
+  static const Color divider = Color(0xFF4A485C);
+
+  // Text
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFFEDCCE0);  // La Vibes
+  static const Color textMuted = Color(0xFF9E9CAB);
+
+  // Accent - Chateau Rose (#DB9ED3)
+  static const Color accent = Color(0xFFDB9ED3);
+
+  // Status
+  static const Color success = Color(0xFF62786D);  // Galena green
+  static const Color warning = Color(0xFFE1CEC0);  // Dust Storm
+  static const Color error = Color(0xFFE57373);
+
+  // Sport colors
+  static const Color volleyballPrimary = Color(0xFFDB9ED3);  // Chateau Rose
+  static const Color pickleballPrimary = Color(0xFF78769C);  // Benimidori Purple
+}
+
 /// Spring theme implementation
 class SpringColorPalette implements AppColorPalette {
   const SpringColorPalette();
@@ -197,4 +285,160 @@ class SpringColorPalette implements AppColorPalette {
 
   @override
   bool get isDark => false;
+}
+
+/// Midnight Mint theme implementation - Ocean corporate dark
+class MidnightMintColorPalette implements AppColorPalette {
+  const MidnightMintColorPalette();
+
+  @override
+  Color get background => MidnightMintColors.background;
+  @override
+  Color get cardBackground => MidnightMintColors.cardBackground;
+  @override
+  Color get cardBackgroundLight => MidnightMintColors.cardBackgroundLight;
+  @override
+  Color get searchBackground => MidnightMintColors.searchBackground;
+  @override
+  Color get divider => MidnightMintColors.divider;
+
+  @override
+  Color get textPrimary => MidnightMintColors.textPrimary;
+  @override
+  Color get textSecondary => MidnightMintColors.textSecondary;
+  @override
+  Color get textMuted => MidnightMintColors.textMuted;
+
+  @override
+  Color get accent => MidnightMintColors.accent;
+
+  @override
+  Color get success => MidnightMintColors.success;
+  @override
+  Color get warning => MidnightMintColors.warning;
+  @override
+  Color get error => MidnightMintColors.error;
+
+  @override
+  Color get volleyballPrimary => MidnightMintColors.volleyballPrimary;
+  @override
+  Color get pickleballPrimary => MidnightMintColors.pickleballPrimary;
+
+  @override
+  Color get accentLight => accent.withOpacity(0.2);
+  @override
+  Color get accentSubtle => accent.withOpacity(0.15);
+  @override
+  Color get successLight => success.withOpacity(0.2);
+  @override
+  Color get warningLight => warning.withOpacity(0.2);
+  @override
+  Color get errorLight => error.withOpacity(0.2);
+
+  @override
+  bool get isDark => true;
+}
+
+/// Neon Night theme implementation - GridsterGP dark
+class NeonNightColorPalette implements AppColorPalette {
+  const NeonNightColorPalette();
+
+  @override
+  Color get background => NeonNightColors.background;
+  @override
+  Color get cardBackground => NeonNightColors.cardBackground;
+  @override
+  Color get cardBackgroundLight => NeonNightColors.cardBackgroundLight;
+  @override
+  Color get searchBackground => NeonNightColors.searchBackground;
+  @override
+  Color get divider => NeonNightColors.divider;
+
+  @override
+  Color get textPrimary => NeonNightColors.textPrimary;
+  @override
+  Color get textSecondary => NeonNightColors.textSecondary;
+  @override
+  Color get textMuted => NeonNightColors.textMuted;
+
+  @override
+  Color get accent => NeonNightColors.accent;
+
+  @override
+  Color get success => NeonNightColors.success;
+  @override
+  Color get warning => NeonNightColors.warning;
+  @override
+  Color get error => NeonNightColors.error;
+
+  @override
+  Color get volleyballPrimary => NeonNightColors.volleyballPrimary;
+  @override
+  Color get pickleballPrimary => NeonNightColors.pickleballPrimary;
+
+  @override
+  Color get accentLight => accent.withOpacity(0.2);
+  @override
+  Color get accentSubtle => accent.withOpacity(0.15);
+  @override
+  Color get successLight => success.withOpacity(0.2);
+  @override
+  Color get warningLight => warning.withOpacity(0.2);
+  @override
+  Color get errorLight => error.withOpacity(0.2);
+
+  @override
+  bool get isDark => true;
+}
+
+/// Dusk Garden theme implementation - Floral Garden dark
+class DuskGardenColorPalette implements AppColorPalette {
+  const DuskGardenColorPalette();
+
+  @override
+  Color get background => DuskGardenColors.background;
+  @override
+  Color get cardBackground => DuskGardenColors.cardBackground;
+  @override
+  Color get cardBackgroundLight => DuskGardenColors.cardBackgroundLight;
+  @override
+  Color get searchBackground => DuskGardenColors.searchBackground;
+  @override
+  Color get divider => DuskGardenColors.divider;
+
+  @override
+  Color get textPrimary => DuskGardenColors.textPrimary;
+  @override
+  Color get textSecondary => DuskGardenColors.textSecondary;
+  @override
+  Color get textMuted => DuskGardenColors.textMuted;
+
+  @override
+  Color get accent => DuskGardenColors.accent;
+
+  @override
+  Color get success => DuskGardenColors.success;
+  @override
+  Color get warning => DuskGardenColors.warning;
+  @override
+  Color get error => DuskGardenColors.error;
+
+  @override
+  Color get volleyballPrimary => DuskGardenColors.volleyballPrimary;
+  @override
+  Color get pickleballPrimary => DuskGardenColors.pickleballPrimary;
+
+  @override
+  Color get accentLight => accent.withOpacity(0.2);
+  @override
+  Color get accentSubtle => accent.withOpacity(0.15);
+  @override
+  Color get successLight => success.withOpacity(0.2);
+  @override
+  Color get warningLight => warning.withOpacity(0.2);
+  @override
+  Color get errorLight => error.withOpacity(0.2);
+
+  @override
+  bool get isDark => true;
 }
