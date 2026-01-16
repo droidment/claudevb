@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../models/team.dart';
 import '../../services/team_service.dart';
+import '../../theme/theme.dart';
 import 'create_team_screen.dart';
+import 'import_teams_screen.dart';
 import 'team_detail_screen.dart';
 
 class TeamsListScreen extends StatefulWidget {
@@ -54,28 +56,49 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
   }
 
   void _navigateToTeamDetail(String teamId) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => TeamDetailScreen(teamId: teamId),
-      ),
-    ).then((_) => _loadTeams());
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (context) => TeamDetailScreen(teamId: teamId),
+          ),
+        )
+        .then((_) => _loadTeams());
   }
 
   Color _getTeamColor(String? teamColor) {
-    if (teamColor == null) return Colors.blue;
+    final colors = context.colors;
+    if (teamColor == null) return colors.accent;
     try {
       return Color(int.parse(teamColor.replaceFirst('#', '0xFF')));
     } catch (e) {
-      return Colors.blue;
+      return colors.accent;
+    }
+  }
+
+  Future<void> _navigateToImportTeams() async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (context) => const ImportTeamsScreen()),
+    );
+
+    if (result == true) {
+      _loadTeams();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: const Text('My Teams'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.upload_file),
+            tooltip: 'Import from CSV',
+            onPressed: _navigateToImportTeams,
+          ),
+        ],
       ),
       body: _buildBody(),
       floatingActionButton: FloatingActionButton.extended(
@@ -87,6 +110,8 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
   }
 
   Widget _buildBody() {
+    final colors = context.colors;
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -96,14 +121,11 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: colors.error),
             const SizedBox(height: 16),
             Text('Error: $_error'),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadTeams,
-              child: const Text('Retry'),
-            ),
+            ElevatedButton(onPressed: _loadTeams, child: const Text('Retry')),
           ],
         ),
       );
@@ -114,22 +136,20 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.groups_outlined,
-              size: 100,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.groups_outlined, size: 100, color: colors.textMuted),
             const SizedBox(height: 24),
             Text(
               'No Teams Yet',
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: colors.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Create your first team to get started!',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colors.textSecondary,
+              ),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -156,10 +176,12 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
   }
 
   Widget _buildTeamCard(Team team) {
+    final colors = context.colors;
     final teamColor = _getTeamColor(team.teamColor);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
+      color: colors.cardBackground,
       child: InkWell(
         onTap: () => _navigateToTeamDetail(team.id),
         borderRadius: BorderRadius.circular(12),
@@ -167,25 +189,46 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Team Color Circle
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: teamColor.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: teamColor, width: 3),
-                ),
-                child: Center(
-                  child: Text(
-                    team.name.substring(0, 1).toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: teamColor,
+              // Team Color Circle with paid indicator
+              Stack(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: teamColor.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: teamColor, width: 3),
+                    ),
+                    child: Center(
+                      child: Text(
+                        team.name.substring(0, 1).toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: teamColor,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  if (team.registrationPaid)
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: colors.success,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check,
+                          size: 14,
+                          color: colors.isDark ? Colors.white : Colors.white,
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(width: 16),
               // Team Info
@@ -193,31 +236,97 @@ class _TeamsListScreenState extends State<TeamsListScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      team.name,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            team.name,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.textPrimary,
+                                ),
+                          ),
+                        ),
+                        if (team.registrationPaid)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colors.successLight,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'PAID',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: colors.success,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                    if (team.homeCity != null) ...[
+                    if (team.homeCity != null || team.captainPhone != null) ...[
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
-                          const SizedBox(width: 4),
-                          Text(
-                            team.homeCity!,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
+                          if (team.homeCity != null) ...[
+                            Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: colors.textSecondary,
                             ),
-                          ),
+                            const SizedBox(width: 4),
+                            Text(
+                              team.homeCity!,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: colors.textSecondary),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                    if (team.captainPhone != null || team.lunchCount > 0) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          if (team.captainPhone != null) ...[
+                            Icon(
+                              Icons.phone,
+                              size: 14,
+                              color: colors.textMuted,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              team.captainPhone!,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: colors.textMuted),
+                            ),
+                          ],
+                          if (team.lunchCount > 0) ...[
+                            const SizedBox(width: 12),
+                            Icon(
+                              Icons.restaurant,
+                              size: 14,
+                              color: colors.warning,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${team.lunchCount} lunches',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: colors.warning),
+                            ),
+                          ],
                         ],
                       ),
                     ],
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16),
+              Icon(Icons.arrow_forward_ios, size: 16, color: colors.textMuted),
             ],
           ),
         ),

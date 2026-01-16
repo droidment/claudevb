@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/team.dart';
 import '../../models/player.dart';
 import '../../services/team_service.dart';
+import '../../theme/theme.dart';
 
 class TeamDetailScreen extends StatefulWidget {
   final String teamId;
@@ -51,7 +52,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   Future<void> _showAddPlayerDialog() async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => const AddPlayerDialog(),
+      builder: (context) => AddPlayerDialog(teamId: widget.teamId),
     );
 
     if (result == true) {
@@ -71,6 +72,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Future<void> _deletePlayer(Player player) async {
+    final colors = context.colors;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -83,7 +85,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: colors.error),
             child: const Text('Delete'),
           ),
         ],
@@ -96,9 +98,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
         _loadTeamData();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Player removed from roster'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Player removed from roster'),
+              backgroundColor: colors.success,
             ),
           );
         }
@@ -107,7 +109,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error removing player: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: colors.error,
             ),
           );
         }
@@ -116,6 +118,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Future<void> _deleteTeam() async {
+    final colors = context.colors;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -130,7 +133,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: colors.error),
             child: const Text('Delete'),
           ),
         ],
@@ -143,9 +146,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
         if (mounted) {
           Navigator.of(context).pop(true);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Team deleted successfully'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Team deleted successfully'),
+              backgroundColor: colors.success,
             ),
           );
         }
@@ -154,7 +157,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error deleting team: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: colors.error,
             ),
           );
         }
@@ -163,20 +166,241 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Color _getTeamColor() {
-    if (_team?.teamColor == null) return Colors.blue;
+    final colors = context.colors;
+    if (_team?.teamColor == null) return colors.accent;
     try {
       return Color(int.parse(_team!.teamColor!.replaceFirst('#', '0xFF')));
     } catch (e) {
-      return Colors.blue;
+      return colors.accent;
     }
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    return '${date.month}/${date.day}/${date.year}';
+  }
+
+  Widget _buildRegistrationInfoCard() {
+    final colors = context.colors;
+    // Check if we have any contact or registration info to display
+    final hasAnyInfo =
+        _team!.captainName != null ||
+        _team!.captainEmail != null ||
+        _team!.captainPhone != null ||
+        _team!.contactPerson2 != null ||
+        _team!.registrationDate != null ||
+        _team!.specialRequests != null ||
+        _team!.signedBy != null ||
+        _team!.notes != null ||
+        _team!.category != null ||
+        _team!.playerCount != null;
+
+    if (!hasAnyInfo) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      color: colors.cardBackground,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.assignment,
+                  color: colors.accent,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Registration Info',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            Divider(height: 24, color: colors.divider),
+
+            // Captain Information
+            if (_team!.captainName != null)
+              _buildInfoRow(Icons.person, 'Captain', _team!.captainName!),
+            if (_team!.captainEmail != null)
+              _buildInfoRow(Icons.email, 'Email', _team!.captainEmail!),
+            if (_team!.captainPhone != null)
+              _buildInfoRow(Icons.phone, 'Phone', _team!.captainPhone!),
+            if (_team!.category != null)
+              _buildInfoRow(Icons.category, 'Category', _team!.category!),
+            if (_team!.playerCount != null)
+              _buildInfoRow(
+                Icons.group,
+                'Player Count',
+                '${_team!.playerCount} players',
+              ),
+
+            // Contact Person 2
+            if (_team!.contactPerson2 != null) ...[
+              Divider(height: 24, color: colors.divider),
+              _buildInfoRow(
+                Icons.person_outline,
+                'Contact Person 2',
+                _team!.contactPerson2!,
+              ),
+              if (_team!.contactPhone2 != null)
+                _buildInfoRow(
+                  Icons.phone_outlined,
+                  'Phone 2',
+                  _team!.contactPhone2!,
+                ),
+            ],
+
+            // Registration Details
+            if (_team!.registrationDate != null)
+              _buildInfoRow(
+                Icons.calendar_today,
+                'Registered',
+                _formatDate(_team!.registrationDate),
+              ),
+            if (_team!.signedBy != null)
+              _buildInfoRow(Icons.draw, 'Signed By', _team!.signedBy!),
+
+            // Special Requests
+            if (_team!.specialRequests != null &&
+                _team!.specialRequests!.isNotEmpty) ...[
+              Divider(height: 24, color: colors.divider),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.note, size: 20, color: colors.warning),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Special Requests',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: colors.warningLight,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: colors.warning.withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            _team!.specialRequests!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
+            // Notes
+            if (_team!.notes != null && _team!.notes!.isNotEmpty) ...[
+              Divider(height: 24, color: colors.divider),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.sticky_note_2, size: 20, color: colors.accent),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Notes',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: colors.accentLight,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: colors.accent.withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            _team!.notes!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    final colors = context.colors;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: colors.textSecondary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: colors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: Text(_team?.name ?? 'Team Details'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.delete),
@@ -197,6 +421,8 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Widget _buildBody() {
+    final colors = context.colors;
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -206,7 +432,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: colors.error),
             const SizedBox(height: 16),
             Text('Error: ${_error ?? "Team not found"}'),
             const SizedBox(height: 16),
@@ -257,6 +483,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                     _team!.name,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: colors.textPrimary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -265,21 +492,173 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                        Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: colors.textSecondary,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           _team!.homeCity!,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: colors.textSecondary),
                         ),
                       ],
                     ),
                   ],
+                  if (_team!.category != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.accentLight,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        _team!.category!,
+                        style: TextStyle(
+                          color: colors.accent,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                  // Payment status badges
+                  const SizedBox(height: 12),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (_team!.registrationPaid)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.successLight,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                size: 16,
+                                color: colors.success,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'PAID',
+                                style: TextStyle(
+                                  color: colors.success,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.warningLight,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.pending,
+                                size: 16,
+                                color: colors.warning,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'PENDING',
+                                style: TextStyle(
+                                  color: colors.warning,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (_team!.lunchCount > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.warningLight,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.restaurant,
+                                size: 16,
+                                color: colors.warning,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${_team!.lunchCount} Lunches',
+                                style: TextStyle(
+                                  color: colors.warning,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (_team!.playerCount != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.accentLight,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.group,
+                                size: 16,
+                                color: colors.accent,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${_team!.playerCount} Players',
+                                style: TextStyle(
+                                  color: colors.accent,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),
           ),
+          const SizedBox(height: 16),
+
+          // Registration Info Section
+          _buildRegistrationInfoCard(),
           const SizedBox(height: 16),
 
           // Roster Section
@@ -290,6 +669,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                 'Roster (${_players.length} players)',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
                 ),
               ),
               if (_players.isNotEmpty)
@@ -303,21 +683,28 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
 
           if (_players.isEmpty)
             Card(
+              color: colors.cardBackground,
               child: Padding(
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   children: [
-                    Icon(Icons.person_add_outlined, size: 64, color: Colors.grey[400]),
+                    Icon(
+                      Icons.person_add_outlined,
+                      size: 64,
+                      color: colors.textMuted,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'No Players Yet',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: colors.textPrimary,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Add players to your roster',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
+                        color: colors.textSecondary,
                       ),
                     ),
                   ],
@@ -332,49 +719,59 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Widget _buildPlayerCard(Player player) {
+    final colors = context.colors;
+    final teamColor = _getTeamColor();
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      color: colors.cardBackground,
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: _getTeamColor().withOpacity(0.2),
+          backgroundColor: teamColor.withOpacity(0.2),
           child: Text(
             player.jerseyNumber?.toString() ?? '?',
             style: TextStyle(
-              color: _getTeamColor(),
+              color: teamColor,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
         title: Text(
           player.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: colors.textPrimary,
+          ),
         ),
         subtitle: Text(
           [
             if (player.position != null)
-              VolleyballPositionExtension.fromString(player.position)?.displayName,
+              VolleyballPositionExtension.fromString(
+                player.position,
+              )?.displayName,
             if (player.heightInches != null) player.heightFormatted,
           ].where((e) => e != null).join(' • '),
+          style: TextStyle(color: colors.textSecondary),
         ),
         trailing: PopupMenuButton(
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'edit',
               child: Row(
                 children: [
-                  Icon(Icons.edit, size: 20),
-                  SizedBox(width: 12),
-                  Text('Edit'),
+                  Icon(Icons.edit, size: 20, color: colors.textPrimary),
+                  const SizedBox(width: 12),
+                  Text('Edit', style: TextStyle(color: colors.textPrimary)),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
               child: Row(
                 children: [
-                  Icon(Icons.delete, size: 20, color: Colors.red),
-                  SizedBox(width: 12),
-                  Text('Delete', style: TextStyle(color: Colors.red)),
+                  Icon(Icons.delete, size: 20, color: colors.error),
+                  const SizedBox(width: 12),
+                  Text('Delete', style: TextStyle(color: colors.error)),
                 ],
               ),
             ),
@@ -394,7 +791,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
 
 // Add Player Dialog
 class AddPlayerDialog extends StatefulWidget {
-  const AddPlayerDialog({super.key});
+  final String teamId;
+
+  const AddPlayerDialog({super.key, required this.teamId});
 
   @override
   State<AddPlayerDialog> createState() => _AddPlayerDialogState();
@@ -429,6 +828,8 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
 
     setState(() => _isLoading = true);
 
+    final colors = context.colors;
+
     try {
       int? heightInches;
       if (_heightFeetController.text.isNotEmpty ||
@@ -457,9 +858,9 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
       if (mounted) {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Player added successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Player added successfully!'),
+            backgroundColor: colors.success,
           ),
         );
       }
@@ -468,7 +869,7 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error adding player: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colors.error,
           ),
         );
       }
@@ -481,11 +882,6 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    // Get team ID from the parent screen
-    final teamId = (context.findAncestorStateOfType<_TeamDetailScreenState>())
-        ?.widget
-        .teamId;
-
     return AlertDialog(
       title: const Text('Add Player'),
       content: Form(
@@ -519,7 +915,7 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<VolleyballPosition>(
-                value: _selectedPosition,
+                initialValue: _selectedPosition,
                 decoration: const InputDecoration(
                   labelText: 'Position',
                   border: OutlineInputBorder(),
@@ -570,9 +966,7 @@ class _AddPlayerDialogState extends State<AddPlayerDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _isLoading || teamId == null
-              ? null
-              : () => _addPlayer(teamId),
+          onPressed: _isLoading ? null : () => _addPlayer(widget.teamId),
           child: _isLoading
               ? const SizedBox(
                   width: 20,
@@ -627,7 +1021,9 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
       _heightInchesController = TextEditingController();
     }
 
-    _selectedPosition = VolleyballPositionExtension.fromString(widget.player.position);
+    _selectedPosition = VolleyballPositionExtension.fromString(
+      widget.player.position,
+    );
   }
 
   @override
@@ -644,6 +1040,8 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
 
     setState(() => _isLoading = true);
 
+    final colors = context.colors;
+
     try {
       int? heightInches;
       if (_heightFeetController.text.isNotEmpty ||
@@ -653,24 +1051,21 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
         heightInches = (feet * 12) + inches;
       }
 
-      await _teamService.updatePlayer(
-        widget.player.id,
-        {
-          'name': _nameController.text.trim(),
-          'jersey_number': _jerseyController.text.isEmpty
-              ? null
-              : int.tryParse(_jerseyController.text),
-          'position': _selectedPosition?.dbValue,
-          'height_inches': heightInches,
-        },
-      );
+      await _teamService.updatePlayer(widget.player.id, {
+        'name': _nameController.text.trim(),
+        'jersey_number': _jerseyController.text.isEmpty
+            ? null
+            : int.tryParse(_jerseyController.text),
+        'position': _selectedPosition?.dbValue,
+        'height_inches': heightInches,
+      });
 
       if (mounted) {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Player updated successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Player updated successfully!'),
+            backgroundColor: colors.success,
           ),
         );
       }
@@ -679,7 +1074,7 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error updating player: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colors.error,
           ),
         );
       }
@@ -725,7 +1120,7 @@ class _EditPlayerDialogState extends State<EditPlayerDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<VolleyballPosition>(
-                value: _selectedPosition,
+                initialValue: _selectedPosition,
                 decoration: const InputDecoration(
                   labelText: 'Position',
                   border: OutlineInputBorder(),

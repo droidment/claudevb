@@ -1,0 +1,831 @@
+import 'package:flutter/material.dart';
+import '../../services/tournament_service.dart';
+import '../../theme/theme.dart';
+
+class ManageSeedsScreen extends StatefulWidget {
+  final String tournamentId;
+  final String tournamentName;
+
+  const ManageSeedsScreen({
+    super.key,
+    required this.tournamentId,
+    required this.tournamentName,
+  });
+
+  @override
+  State<ManageSeedsScreen> createState() => _ManageSeedsScreenState();
+}
+
+class _ManageSeedsScreenState extends State<ManageSeedsScreen> {
+  final _tournamentService = TournamentService();
+  List<Map<String, dynamic>> _teams = [];
+  bool _isLoading = true;
+  bool _isSaving = false;
+  String? _error;
+
+  // Track changes: teamId -> seedNumber
+  final Map<String, int?> _seedChanges = {};
+  // Track pool changes: teamId -> poolAssignment
+  final Map<String, String?> _poolChanges = {};
+  // Text controllers for inline seed editing: teamId -> controller
+  final Map<String, TextEditingController> _seedControllers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTeams();
+  }
+
+  @override
+  void dispose() {
+    // Dispose all text controllers
+    for (final controller in _seedControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  /// Get or create a text controller for a team's seed
+  TextEditingController _getControllerForTeam(String teamId, int? seedNumber) {
+    if (!_seedControllers.containsKey(teamId)) {
+      _seedControllers[teamId] = TextEditingController(
+        text: seedNumber?.toString() ?? '',
+      );
+    }
+    return _seedControllers[teamId]!;
+  }
+
+  /// Update seed from inline text field
+  void _updateSeedFromController(String teamId, String value) {
+    final newSeed = value.isEmpty ? null : int.tryParse(value);
+
+    setState(() {
+      _seedChanges[teamId] = newSeed;
+
+      // Update local state
+      for (final team in _teams) {
+        final data = team['teams'] as Map<String, dynamic>?;
+        if (data != null && data['id'] == teamId) {
+          team['seed_number'] = newSeed;
+          break;
+        }
+      }
+    });
+  }
+
+  Future<void> _loadTeams() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final teams = await _tournamentService.getTournamentTeams(
+        widget.tournamentId,
+      );
+
+      // Sort by current seed number, unseeded teams at the end
+      teams.sort((a, b) {
+        final seedA = a['seed_number'] as int?;
+        final seedB = b['seed_number'] as int?;
+        if (seedA == null && seedB == null) return 0;
+        if (seedA == null) return 1;
+        if (seedB == null) return -1;
+        return seedA.compareTo(seedB);
+      });
+
+      setState(() {
+        _teams = teams;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _saveAllSeeds() async {
+    final colors = context.colors;
+    if (_seedChanges.isEmpty && _poolChanges.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No changes to save')));
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      // Save all seed and pool changes
+      final allTeamIds = {..._seedChanges.keys, ..._poolChanges.keys};
+      for (final teamId in allTeamIds) {
+        // Only pass values that have changed
+        final hasSeedChange = _seedChanges.containsKey(teamId);
+        final hasPoolChange = _poolChanges.containsKey(teamId);
+
+        await _tournamentService.updateRegistration(
+          tournamentId: widget.tournamentId,
+          teamId: teamId,
+          seedNumber: hasSeedChange ? _seedChanges[teamId] : null,
+          updateSeedNumber: hasSeedChange,
+          poolAssignment: hasPoolChange ? _poolChanges[teamId] : null,
+          updatePoolAssignment: hasPoolChange,
+        );
+      }
+
+      _seedChanges.clear();
+      _poolChanges.clear();
+      await _loadTeams();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Seeds saved successfully'),
+            backgroundColor: colors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving seeds: $e'),
+            backgroundColor: colors.error,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isSaving = false);
+    }
+  }
+
+  void _autoAssignSeeds() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Auto-Assign Seeds'),
+        content: const Text(
+          'This will assign seed numbers 1, 2, 3... to all teams in their current order.\n\n'
+          'Drag teams to reorder them first if needed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                for (int i = 0; i < _teams.length; i++) {
+                  final teamData = _teams[i]['teams'] as Map<String, dynamic>?;
+                  if (teamData != null) {
+                    final teamId = teamData['id'] as String;
+                    _seedChanges[teamId] = i + 1;
+                    _teams[i]['seed_number'] = i + 1;
+                  }
+                }
+              });
+            },
+            child: const Text('Assign'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _clearAllSeeds() {
+    final colors = context.colors;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Seeds'),
+        content: const Text('This will remove seed numbers from all teams.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: colors.error),
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                for (final team in _teams) {
+                  final teamData = team['teams'] as Map<String, dynamic>?;
+                  if (teamData != null) {
+                    final teamId = teamData['id'] as String;
+                    _seedChanges[teamId] = null;
+                    team['seed_number'] = null;
+                  }
+                }
+              });
+            },
+            child: const Text('Clear All'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Calculate optimal number of pools for given team count
+  /// Tries to get pools of 4-6 teams each
+  int _calculateOptimalPoolCount(int teamCount) {
+    if (teamCount <= 6) return 1;
+    if (teamCount <= 12) return 2;
+    if (teamCount <= 18) return 3;
+    if (teamCount <= 24) return 4;
+    if (teamCount <= 30) return 5;
+    if (teamCount <= 36) return 6;
+    // For larger tournaments, aim for pools of 5-6
+    return (teamCount / 5).ceil();
+  }
+
+  /// Assign pools using snake draft based on seeds
+  /// e.g., 4 pools: 1->A, 2->B, 3->C, 4->D, 5->D, 6->C, 7->B, 8->A, 9->A, ...
+  void _autoAssignPools() {
+    final colors = context.colors;
+    // Check if all teams have seeds
+    final unseededTeams = _teams.where((t) => t['seed_number'] == null).length;
+    if (unseededTeams > 0) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Seeds Required'),
+          content: Text(
+            '$unseededTeams team${unseededTeams == 1 ? ' has' : 's have'} no seed assigned.\n\n'
+            'Please assign seeds to all teams first (use "Auto-assign Seeds"), '
+            'then assign pools.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final teamCount = _teams.length;
+    final suggestedPools = _calculateOptimalPoolCount(teamCount);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        int numberOfPools = suggestedPools;
+
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            final teamsPerPool = (teamCount / numberOfPools).ceil();
+            final poolNames = List.generate(
+              numberOfPools,
+              (i) => String.fromCharCode('A'.codeUnitAt(0) + i),
+            );
+
+            return AlertDialog(
+              title: const Text('Auto-Assign Pools'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Distribute $teamCount teams into pools using snake draft.\n'
+                    '(Seed 1->A, 2->B, 3->C, 4->D, 5->D, 6->C, ...)',
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Text('Number of Pools: '),
+                      const SizedBox(width: 8),
+                      DropdownButton<int>(
+                        value: numberOfPools,
+                        items: List.generate(8, (i) => i + 2)
+                            .map(
+                              (n) =>
+                                  DropdownMenuItem(value: n, child: Text('$n')),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setDialogState(() => numberOfPools = value);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colors.accentLight,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pool Preview:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: colors.accent,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Pools ${poolNames.join(", ")}',
+                          style: TextStyle(color: colors.accent),
+                        ),
+                        Text(
+                          '~$teamsPerPool teams per pool',
+                          style: TextStyle(color: colors.accent),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                    _assignPoolsSnakeDraft(numberOfPools);
+                  },
+                  child: const Text('Assign Pools'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _assignPoolsSnakeDraft(int numberOfPools) {
+    final colors = context.colors;
+    setState(() {
+      // Sort teams by seed
+      final sortedTeams = List<Map<String, dynamic>>.from(_teams);
+      sortedTeams.sort((a, b) {
+        final seedA = a['seed_number'] as int? ?? 9999;
+        final seedB = b['seed_number'] as int? ?? 9999;
+        return seedA.compareTo(seedB);
+      });
+
+      // Snake draft assignment
+      final poolNames = List.generate(
+        numberOfPools,
+        (i) => String.fromCharCode('A'.codeUnitAt(0) + i),
+      );
+
+      for (int i = 0; i < sortedTeams.length; i++) {
+        final team = sortedTeams[i];
+        final teamData = team['teams'] as Map<String, dynamic>?;
+        if (teamData == null) continue;
+
+        final teamId = teamData['id'] as String;
+
+        // Snake draft: determine direction based on row
+        final row = i ~/ numberOfPools;
+        final posInRow = i % numberOfPools;
+        final poolIndex = row.isEven
+            ? posInRow
+            : (numberOfPools - 1 - posInRow);
+        final poolName = poolNames[poolIndex];
+
+        _poolChanges[teamId] = poolName;
+
+        // Update local state for display
+        for (final t in _teams) {
+          final td = t['teams'] as Map<String, dynamic>?;
+          if (td != null && td['id'] == teamId) {
+            t['pool_assignment'] = poolName;
+            break;
+          }
+        }
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Assigned ${_teams.length} teams to $numberOfPools pools',
+        ),
+        backgroundColor: colors.accent,
+      ),
+    );
+  }
+
+  void _clearAllPools() {
+    final colors = context.colors;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Pools'),
+        content: const Text(
+          'This will remove pool assignments from all teams.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: colors.error),
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                for (final team in _teams) {
+                  final teamData = team['teams'] as Map<String, dynamic>?;
+                  if (teamData != null) {
+                    final teamId = teamData['id'] as String;
+                    _poolChanges[teamId] = null;
+                    team['pool_assignment'] = null;
+                  }
+                }
+              });
+            },
+            child: const Text('Clear All'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Scaffold(
+      backgroundColor: colors.background,
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Manage Seeds'),
+            Text(
+              widget.tournamentName,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          if (_seedChanges.isNotEmpty || _poolChanges.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Chip(
+                label: Text(
+                  '${_seedChanges.length + _poolChanges.length} changes',
+                ),
+                backgroundColor: colors.warningLight,
+              ),
+            ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'More options',
+            onSelected: (value) {
+              switch (value) {
+                case 'auto_seeds':
+                  _autoAssignSeeds();
+                  break;
+                case 'clear_seeds':
+                  _clearAllSeeds();
+                  break;
+                case 'auto_pools':
+                  _autoAssignPools();
+                  break;
+                case 'clear_pools':
+                  _clearAllPools();
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'auto_seeds',
+                child: ListTile(
+                  leading: Icon(Icons.format_list_numbered),
+                  title: Text('Auto-assign Seeds'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'auto_pools',
+                child: ListTile(
+                  leading: Icon(Icons.grid_view),
+                  title: Text('Auto-assign Pools'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                value: 'clear_seeds',
+                child: ListTile(
+                  leading: Icon(Icons.clear, color: colors.error),
+                  title: Text(
+                    'Clear All Seeds',
+                    style: TextStyle(color: colors.error),
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'clear_pools',
+                child: ListTile(
+                  leading: Icon(Icons.clear_all, color: colors.error),
+                  title: Text(
+                    'Clear All Pools',
+                    style: TextStyle(color: colors.error),
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      body: _buildBody(),
+      bottomNavigationBar: (_seedChanges.isNotEmpty || _poolChanges.isNotEmpty)
+          ? SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: FilledButton.icon(
+                  onPressed: _isSaving ? null : _saveAllSeeds,
+                  icon: _isSaving
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: colors.textPrimary,
+                          ),
+                        )
+                      : const Icon(Icons.save),
+                  label: Text(_isSaving ? 'Saving...' : 'Save All Changes'),
+                ),
+              ),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildBody() {
+    final colors = context.colors;
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: colors.error),
+            const SizedBox(height: 16),
+            Text('Error: $_error'),
+            const SizedBox(height: 16),
+            ElevatedButton(onPressed: _loadTeams, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+
+    if (_teams.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.group_off, size: 64, color: colors.textMuted),
+            const SizedBox(height: 16),
+            Text(
+              'No teams registered',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: colors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Add teams to the tournament first',
+              style: TextStyle(color: colors.textSecondary),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Instructions
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          color: colors.accentLight,
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: colors.accent),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Enter seed numbers directly in the boxes. Drag teams to reorder. Lower seed = stronger team.',
+                  style: TextStyle(color: colors.accent),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Teams list
+        Expanded(
+          child: ReorderableListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _teams.length,
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if (newIndex > oldIndex) newIndex--;
+                final item = _teams.removeAt(oldIndex);
+                _teams.insert(newIndex, item);
+              });
+            },
+            itemBuilder: (context, index) {
+              return _buildTeamItem(_teams[index], index);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTeamItem(Map<String, dynamic> registration, int index) {
+    final colors = context.colors;
+    final teamData = registration['teams'] as Map<String, dynamic>?;
+    if (teamData == null) {
+      return const SizedBox.shrink(key: ValueKey('empty'));
+    }
+
+    final teamId = teamData['id'] as String;
+    final teamName = teamData['name'] as String? ?? 'Unknown Team';
+    final homeCity = teamData['home_city'] as String?;
+    final teamColor = teamData['team_color'] as String?;
+    final seedNumber = registration['seed_number'] as int?;
+    final poolAssignment = registration['pool_assignment'] as String?;
+
+    Color avatarColor = colors.accent;
+    if (teamColor != null) {
+      try {
+        avatarColor = Color(int.parse(teamColor.replaceFirst('#', '0xFF')));
+      } catch (_) {}
+    }
+
+    final hasSeedChange = _seedChanges.containsKey(teamId);
+    final hasPoolChange = _poolChanges.containsKey(teamId);
+    final hasChange = hasSeedChange || hasPoolChange;
+
+    // Get or create controller for this team
+    final controller = _getControllerForTeam(teamId, seedNumber);
+
+    return Card(
+      key: ValueKey(teamId),
+      margin: const EdgeInsets.only(bottom: 8),
+      color: hasChange ? colors.warningLight : colors.cardBackground,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Row(
+          children: [
+            // Drag handle
+            ReorderableDragStartListener(
+              index: index,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Icon(Icons.drag_handle, color: colors.textMuted),
+              ),
+            ),
+            // Inline seed input
+            SizedBox(
+              width: 50,
+              height: 40,
+              child: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: colors.warning,
+                ),
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  filled: true,
+                  fillColor: seedNumber != null
+                      ? colors.warningLight
+                      : colors.searchBackground,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: colors.warning),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: seedNumber != null
+                          ? colors.warning
+                          : colors.divider,
+                      width: seedNumber != null ? 2 : 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: colors.warning, width: 2),
+                  ),
+                  hintText: '-',
+                  hintStyle: TextStyle(color: colors.textMuted),
+                ),
+                onChanged: (value) => _updateSeedFromController(teamId, value),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Team info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: avatarColor.withValues(alpha: 0.2),
+                        child: Text(
+                          teamName.substring(0, 1).toUpperCase(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: avatarColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          teamName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: colors.textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (poolAssignment != null || homeCity != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        children: [
+                          if (poolAssignment != null) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: colors.accentLight,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: colors.accent),
+                              ),
+                              child: Text(
+                                'Pool $poolAssignment',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.accent,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          if (homeCity != null) ...[
+                            Icon(Icons.location_on, size: 12, color: colors.textMuted),
+                            const SizedBox(width: 2),
+                            Expanded(
+                              child: Text(
+                                homeCity,
+                                style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

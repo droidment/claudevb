@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/team_service.dart';
+import '../../theme/theme.dart';
 
 class CreateTeamScreen extends StatefulWidget {
   const CreateTeamScreen({super.key});
@@ -16,6 +17,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
 
   bool _isLoading = false;
   Color _selectedColor = Colors.blue;
+  String _selectedSportType = 'volleyball';
 
   final List<Color> _availableColors = [
     Colors.blue,
@@ -46,6 +48,8 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
 
     setState(() => _isLoading = true);
 
+    final colors = context.colors;
+
     try {
       await _teamService.createTeam(
         name: _nameController.text.trim(),
@@ -53,13 +57,14 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
             ? null
             : _homeCityController.text.trim(),
         teamColor: _colorToHex(_selectedColor),
+        sportType: _selectedSportType,
       );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Team created successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Team created successfully!'),
+            backgroundColor: colors.success,
           ),
         );
         Navigator.of(context).pop(true);
@@ -69,7 +74,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error creating team: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colors.error,
           ),
         );
       }
@@ -82,10 +87,11 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: const Text('Create Team'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Form(
         key: _formKey,
@@ -127,6 +133,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
                           : _nameController.text,
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: colors.textPrimary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -135,7 +142,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
                       Text(
                         _homeCityController.text,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
+                          color: colors.textSecondary,
                         ),
                       ),
                     ],
@@ -180,6 +187,32 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
               textCapitalization: TextCapitalization.words,
               onChanged: (_) => setState(() {}),
             ),
+            const SizedBox(height: 16),
+
+            // Sport Type
+            DropdownButtonFormField<String>(
+              initialValue: _selectedSportType,
+              decoration: const InputDecoration(
+                labelText: 'Sport Type *',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.sports),
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: 'volleyball',
+                  child: Text('Volleyball'),
+                ),
+                DropdownMenuItem(
+                  value: 'pickleball',
+                  child: Text('Pickleball'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _selectedSportType = value);
+                }
+              },
+            ),
             const SizedBox(height: 24),
 
             // Team Color
@@ -187,6 +220,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
               'Team Color',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
+                color: colors.textPrimary,
               ),
             ),
             const SizedBox(height: 12),
@@ -206,7 +240,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
                       color: color,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected ? Colors.black : Colors.grey.shade300,
+                        color: isSelected ? colors.textPrimary : colors.divider,
                         width: isSelected ? 3 : 1,
                       ),
                       boxShadow: isSelected

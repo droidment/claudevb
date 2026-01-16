@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/tournament.dart';
 import '../../services/tournament_service.dart';
+import '../../theme/theme.dart';
 import 'tournament_detail_screen.dart';
 
 class JoinByInviteScreen extends StatefulWidget {
@@ -68,17 +69,18 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
   }
 
   Color _getStatusColor(TournamentStatus status) {
+    final colors = context.colors;
     switch (status) {
       case TournamentStatus.registrationOpen:
-        return Colors.green;
+        return colors.success;
       case TournamentStatus.registrationClosed:
-        return Colors.orange;
+        return colors.warning;
       case TournamentStatus.ongoing:
-        return Colors.blue;
+        return colors.accent;
       case TournamentStatus.completed:
-        return Colors.grey;
+        return colors.textMuted;
       case TournamentStatus.cancelled:
-        return Colors.red;
+        return colors.error;
     }
   }
 
@@ -90,10 +92,11 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: const Text('Join Private Tournament'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -104,7 +107,7 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
             children: [
               // Header
               Card(
-                color: Colors.orange.shade50,
+                color: colors.warningLight,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -112,7 +115,7 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
                       Icon(
                         Icons.lock_open,
                         size: 64,
-                        color: Colors.orange.shade700,
+                        color: colors.warning,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -126,7 +129,7 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
                       Text(
                         'Enter the invite code shared by the tournament organizer to access and join a private tournament.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[700],
+                          color: colors.textSecondary,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -184,17 +187,17 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
               // Error Message
               if (_error != null) ...[
                 Card(
-                  color: Colors.red.shade50,
+                  color: colors.errorLight,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
                       children: [
-                        Icon(Icons.error_outline, color: Colors.red.shade700),
+                        Icon(Icons.error_outline, color: colors.error),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             _error!,
-                            style: TextStyle(color: Colors.red.shade900),
+                            style: TextStyle(color: colors.error),
                           ),
                         ),
                       ],
@@ -210,7 +213,7 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
                   'Tournament Found!',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.green,
+                    color: colors.success,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -229,7 +232,7 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
                               Icon(
                                 _getSportIcon(_foundTournament!.sportType),
                                 size: 40,
-                                color: Theme.of(context).colorScheme.primary,
+                                color: colors.accent,
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -246,7 +249,7 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
                                     Text(
                                       _foundTournament!.format.displayName,
                                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        color: Colors.grey[600],
+                                        color: colors.textSecondary,
                                       ),
                                     ),
                                   ],
@@ -275,7 +278,7 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  'Private • ${_foundTournament!.status.displayName}',
+                                  'Private - ${_foundTournament!.status.displayName}',
                                   style: TextStyle(
                                     color: _getStatusColor(_foundTournament!.status),
                                     fontWeight: FontWeight.w600,
@@ -300,7 +303,7 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
                           if (_foundTournament!.location != null)
                             Row(
                               children: [
-                                Icon(Icons.location_on, size: 18, color: Colors.grey[600]),
+                                Icon(Icons.location_on, size: 18, color: colors.textSecondary),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
@@ -314,7 +317,7 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                Icon(Icons.calendar_today, size: 18, color: Colors.grey[600]),
+                                Icon(Icons.calendar_today, size: 18, color: colors.textSecondary),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Starts: ${_foundTournament!.startDate!.month}/${_foundTournament!.startDate!.day}/${_foundTournament!.startDate!.year}',
@@ -346,8 +349,8 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
                               label: const Text('Register Your Team'),
                               style: OutlinedButton.styleFrom(
                                 minimumSize: const Size(double.infinity, 45),
-                                foregroundColor: Colors.green,
-                                side: const BorderSide(color: Colors.green, width: 2),
+                                foregroundColor: colors.success,
+                                side: BorderSide(color: colors.success, width: 2),
                               ),
                             ),
                           ],
@@ -361,7 +364,7 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
               // Help Section
               const SizedBox(height: 32),
               Card(
-                color: Colors.blue.shade50,
+                color: colors.accentLight,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -369,24 +372,24 @@ class _JoinByInviteScreenState extends State<JoinByInviteScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.help_outline, color: Colors.blue.shade700),
+                          Icon(Icons.help_outline, color: colors.accent),
                           const SizedBox(width: 8),
                           Text(
                             'Need Help?',
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade900,
+                              color: colors.textPrimary,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        '• Ask the tournament organizer for the invite code\n'
-                        '• The code is 8 characters long (letters and numbers)\n'
-                        '• Codes are case-insensitive\n'
-                        '• Make sure registration is still open',
-                        style: TextStyle(color: Colors.blue.shade900, height: 1.5),
+                        '- Ask the tournament organizer for the invite code\n'
+                        '- The code is 8 characters long (letters and numbers)\n'
+                        '- Codes are case-insensitive\n'
+                        '- Make sure registration is still open',
+                        style: TextStyle(color: colors.textPrimary, height: 1.5),
                       ),
                     ],
                   ),

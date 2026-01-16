@@ -1,0 +1,969 @@
+import 'package:flutter/material.dart';
+import '../../models/match.dart';
+import '../../models/match_set.dart';
+import '../../models/scoring_format.dart';
+import '../../models/scoring_config.dart';
+import '../../services/match_service.dart';
+import '../../theme/theme.dart';
+
+class MatchDetailScreen extends StatefulWidget {
+  final String matchId;
+  final bool isOrganizer;
+  final ScoringFormat scoringFormat; // Legacy - for backward compatibility
+  final TournamentScoringConfig? tournamentScoringConfig; // New phase-based config
+
+  const MatchDetailScreen({
+    super.key,
+    required this.matchId,
+    this.isOrganizer = false,
+    this.scoringFormat = ScoringFormat.singleSet,
+    this.tournamentScoringConfig,
+  });
+
+  @override
+  State<MatchDetailScreen> createState() => _MatchDetailScreenState();
+}
+
+class _MatchDetailScreenState extends State<MatchDetailScreen> {
+  final _matchService = MatchService();
+  Match? _match;
+  List<MatchSet> _sets = [];
+  String? _team1Name;
+  String? _team2Name;
+  bool _isLoading = true;
+  String? _error;
+
+  /// Get the effective scoring for this match based on its round/phase
+  PhaseScoring get _effectiveScoring {
+    if (widget.tournamentScoringConfig != null && _match != null) {
+      return widget.tournamentScoringConfig!.getScoringForRound(_match!.round);
+    }
+    // Fallback to legacy scoring format
+    return _convertLegacyScoringFormat(widget.scoringFormat);
+  }
+
+  /// Convert legacy ScoringFormat to PhaseScoring for backward compatibility
+  PhaseScoring _convertLegacyScoringFormat(ScoringFormat format) {
+    switch (format) {
+      case ScoringFormat.singleSet:
+        return const PhaseScoring(numberOfSets: 1, pointsPerSet: 25);
+      case ScoringFormat.bestOfThree:
+        return const PhaseScoring(numberOfSets: 3, pointsPerSet: 21, tiebreakPoints: 15);
+      case ScoringFormat.bestOfThreeFull:
+        return const PhaseScoring(numberOfSets: 3, pointsPerSet: 25);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMatchData();
+  }
+
+  Future<void> _loadMatchData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final matchData = await _matchService.getMatchWithTeams(widget.matchId);
+      final sets = await _matchService.getSetsForMatch(widget.matchId);
+
+      final team1Data = matchData['team1'] as Map<String, dynamic>?;
+      final team2Data = matchData['team2'] as Map<String, dynamic>?;
+
+      setState(() {
+        _match = Match.fromJson(matchData);
+        _sets = sets;
+        _team1Name = team1Data?['name'] as String? ?? 'Team 1';
+        _team2Name = team2Data?['name'] as String? ?? 'Team 2';
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _addSet() async {
+    if (_match == null) return;
+
+    final scoring = _effectiveScoring;
+
+    // Check if match is already complete based on scoring format
+    final setsToWin = scoring.setsToWin;
+    final team1SetsWon = _match!.team1SetsWon;
+    final team2SetsWon = _match!.team2SetsWon;
+
+    if (team1SetsWon >= setsToWin || team2SetsWon >= setsToWin) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Match is already complete (${scoring.displayName})',
+            ),
+            backgroundColor: context.colors.warning,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Check if max sets reached
+    if (_sets.length >= scoring.numberOfSets) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Maximum sets reached (${scoring.numberOfSets})',
+            ),
+            backgroundColor: context.colors.warning,
+          ),
+        );
+      }
+      return;
+    }
+
+    final setNumber = _sets.length + 1;
+    final targetScore = scoring.targetScoreForSet(setNumber);
+
+    final result = await showDialog<Map<String, int>>(
+      context: context,
+      builder: (context) => _AddSetDialog(
+        setNumber: setNumber,
+        team1Name: _team1Name!,
+        team2Name: _team2Name!,
+        targetScore: targetScore,
+        phaseScoring: scoring,
+      ),
+    );
+
+    if (result == null) return;
+
+    try {
+      await _matchService.createMatchSet(
+        matchId: widget.matchId,
+        setNumber: _sets.length + 1,
+        team1Score: result['team1']!,
+        team2Score: result['team2']!,
+      );
+
+      // Recalculate match winner
+      await _matchService.calculateMatchWinner(widget.matchId);
+
+      await _loadMatchData();
+
+      // Check if match should be auto-completed
+      _checkAndCompleteMatch();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Set added successfully'),
+            backgroundColor: context.colors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error adding set: $e'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _editSet(MatchSet set) async {
+    final scoring = _effectiveScoring;
+    final targetScore = scoring.targetScoreForSet(set.setNumber);
+
+    final result = await showDialog<Map<String, int>>(
+      context: context,
+      builder: (context) => _AddSetDialog(
+        setNumber: set.setNumber,
+        team1Name: _team1Name!,
+        team2Name: _team2Name!,
+        initialTeam1Score: set.team1Score,
+        initialTeam2Score: set.team2Score,
+        targetScore: targetScore,
+        phaseScoring: scoring,
+      ),
+    );
+
+    if (result == null) return;
+
+    try {
+      await _matchService.updateMatchSet(
+        setId: set.id,
+        team1Score: result['team1']!,
+        team2Score: result['team2']!,
+      );
+
+      // Recalculate match winner
+      await _matchService.calculateMatchWinner(widget.matchId);
+
+      await _loadMatchData();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Set updated successfully'),
+            backgroundColor: context.colors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating set: $e'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteSet(MatchSet set) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Set'),
+        content: Text('Are you sure you want to delete Set ${set.setNumber}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: context.colors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await _matchService.deleteMatchSet(set.id);
+
+      // Recalculate match winner
+      await _matchService.calculateMatchWinner(widget.matchId);
+
+      await _loadMatchData();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Set deleted successfully'),
+            backgroundColor: context.colors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting set: $e'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _checkAndCompleteMatch() {
+    if (_match == null) return;
+
+    // Use phase-specific scoring to determine when match is complete
+    final scoring = _effectiveScoring;
+    final setsToWin = scoring.setsToWin;
+    final team1SetsWon = _sets.where((s) => s.winningTeam == 1).length;
+    final team2SetsWon = _sets.where((s) => s.winningTeam == 2).length;
+
+    // Check if either team has won enough sets
+    final shouldComplete = team1SetsWon >= setsToWin || team2SetsWon >= setsToWin;
+
+    if (shouldComplete && _match!.status != MatchStatus.completed) {
+      _updateMatchStatus(MatchStatus.completed);
+    }
+  }
+
+  Future<void> _updateMatchStatus(MatchStatus newStatus) async {
+    try {
+      await _matchService.updateMatchStatus(
+        matchId: widget.matchId,
+        status: newStatus,
+      );
+
+      // If match is completed, advance winner to next bracket match
+      if (newStatus == MatchStatus.completed) {
+        await _matchService.advanceWinnerToBracket(widget.matchId);
+      }
+
+      await _loadMatchData();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Match status updated to ${newStatus.displayName}'),
+            backgroundColor: context.colors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating status: $e'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Scaffold(
+      backgroundColor: colors.background,
+      appBar: AppBar(
+        title: Text(_match != null
+            ? 'Match #${_match!.matchNumber ?? '?'}'
+            : 'Match Details'),
+        backgroundColor: colors.cardBackground,
+      ),
+      body: _buildBody(),
+      floatingActionButton: widget.isOrganizer && _match != null && !_match!.isComplete
+          ? FloatingActionButton.extended(
+              onPressed: _addSet,
+              icon: const Icon(Icons.add),
+              label: const Text('Add Set'),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildBody() {
+    final colors = context.colors;
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null || _match == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: colors.error),
+            const SizedBox(height: 16),
+            Text('Error: ${_error ?? "Match not found"}'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadMatchData,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadMatchData,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _buildMatchInfoCard(),
+          const SizedBox(height: 16),
+          _buildTeamsCard(),
+          const SizedBox(height: 16),
+          _buildSetsCard(),
+          const SizedBox(height: 16),
+          if (widget.isOrganizer) _buildActionsCard(),
+          const SizedBox(height: 80), // Space for FAB
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMatchInfoCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Match Information',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                _buildStatusBadge(_match!.status),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildInfoRow(
+              Icons.sports,
+              'Round',
+              _match!.round ?? 'TBD',
+            ),
+            if (_match!.scheduledTime != null)
+              _buildInfoRow(
+                Icons.schedule,
+                'Scheduled',
+                _formatDateTime(_match!.scheduledTime!),
+              ),
+            if (_match!.courtNumber != null)
+              _buildInfoRow(
+                Icons.sports_volleyball,
+                'Court',
+                'Court ${_match!.courtNumber}',
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTeamsCard() {
+    final colors = context.colors;
+    final team1Wins = _sets.where((s) => s.winningTeam == 1).length;
+    final team2Wins = _sets.where((s) => s.winningTeam == 2).length;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Team 1
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _team1Name!,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                if (_match!.winnerId == _match!.team1Id)
+                  Icon(Icons.emoji_events, color: colors.warning, size: 32),
+              ],
+            ),
+            if (_sets.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Sets won: $team1Wins',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 16),
+            Text(
+              'VS',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: colors.textMuted,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Team 2
+            Row(
+              children: [
+                if (_match!.winnerId == _match!.team2Id)
+                  Icon(Icons.emoji_events, color: colors.warning, size: 32),
+                Expanded(
+                  child: Text(
+                    _team2Name!,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+              ],
+            ),
+            if (_sets.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Sets won: $team2Wins',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                  ),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSetsCard() {
+    final colors = context.colors;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Set Scores',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (_sets.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Icon(Icons.score, size: 48, color: colors.textMuted),
+                      const SizedBox(height: 8),
+                      Text(
+                        'No sets recorded yet',
+                        style: TextStyle(color: colors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ..._sets.map((set) => _buildSetTile(set)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSetTile(MatchSet set) {
+    final colors = context.colors;
+    final isValid = set.isValidVolleyballScore;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      color: !isValid ? colors.warningLight : null,
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: set.winningTeam == 1
+              ? colors.success
+              : set.winningTeam == 2
+                  ? colors.accent
+                  : colors.textMuted,
+          child: Text(
+            '${set.setNumber}',
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '${set.team1Score}',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: set.winningTeam == 1
+                    ? FontWeight.bold
+                    : FontWeight.normal,
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text('-', style: TextStyle(fontSize: 24)),
+            ),
+            Text(
+              '${set.team2Score}',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: set.winningTeam == 2
+                    ? FontWeight.bold
+                    : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+        subtitle: !isValid
+            ? Text(
+                'Unusual volleyball score',
+                style: TextStyle(color: colors.warning, fontSize: 11),
+                textAlign: TextAlign.center,
+              )
+            : null,
+        trailing: widget.isOrganizer
+            ? PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _editSet(set);
+                  } else if (value == 'delete') {
+                    _deleteSet(set);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: ListTile(
+                      leading: Icon(Icons.edit),
+                      title: Text('Edit'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: ListTile(
+                      leading: Icon(Icons.delete, color: colors.error),
+                      title: Text('Delete', style: TextStyle(color: colors.error)),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
+              )
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildActionsCard() {
+    final colors = context.colors;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Match Actions',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (_match!.status == MatchStatus.scheduled)
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => _updateMatchStatus(MatchStatus.inProgress),
+                  icon: const Icon(Icons.play_circle),
+                  label: const Text('Start Match'),
+                ),
+              ),
+            if (_match!.status == MatchStatus.inProgress)
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => _updateMatchStatus(MatchStatus.completed),
+                  icon: const Icon(Icons.check_circle),
+                  label: const Text('Complete Match'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colors.success,
+                  ),
+                ),
+              ),
+            if (_match!.status != MatchStatus.cancelled) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _updateMatchStatus(MatchStatus.cancelled),
+                  icon: const Icon(Icons.cancel),
+                  label: const Text('Cancel Match'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colors.error,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(MatchStatus status) {
+    final colors = context.colors;
+    Color color;
+    IconData icon;
+
+    switch (status) {
+      case MatchStatus.scheduled:
+        color = colors.accent;
+        icon = Icons.schedule;
+        break;
+      case MatchStatus.inProgress:
+        color = colors.warning;
+        icon = Icons.play_circle;
+        break;
+      case MatchStatus.completed:
+        color = colors.success;
+        icon = Icons.check_circle;
+        break;
+      case MatchStatus.cancelled:
+        color = colors.error;
+        icon = Icons.cancel;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
+          Text(
+            status.displayName,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    final colors = context.colors;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: colors.textSecondary),
+          const SizedBox(width: 12),
+          Text(
+            '$label:',
+            style: TextStyle(
+              fontSize: 14,
+              color: colors.textSecondary,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.month}/${dateTime.day}/${dateTime.year} '
+        'at ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+/// Dialog for adding or editing a set
+class _AddSetDialog extends StatefulWidget {
+  final int setNumber;
+  final String team1Name;
+  final String team2Name;
+  final int? initialTeam1Score;
+  final int? initialTeam2Score;
+  final int targetScore;
+  final PhaseScoring phaseScoring;
+
+  const _AddSetDialog({
+    required this.setNumber,
+    required this.team1Name,
+    required this.team2Name,
+    this.initialTeam1Score,
+    this.initialTeam2Score,
+    this.targetScore = 25,
+    required this.phaseScoring,
+  });
+
+  @override
+  State<_AddSetDialog> createState() => _AddSetDialogState();
+}
+
+class _AddSetDialogState extends State<_AddSetDialog> {
+  late TextEditingController _team1Controller;
+  late TextEditingController _team2Controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _team1Controller = TextEditingController(
+      text: widget.initialTeam1Score?.toString() ?? '',
+    );
+    _team2Controller = TextEditingController(
+      text: widget.initialTeam2Score?.toString() ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _team1Controller.dispose();
+    _team2Controller.dispose();
+    super.dispose();
+  }
+
+  String _getSetInfo() {
+    final scoring = widget.phaseScoring;
+    final targetScore = scoring.targetScoreForSet(widget.setNumber);
+
+    if (scoring.numberOfSets == 1) {
+      return 'Play to $targetScore (win by 2)';
+    } else {
+      final isTiebreaker = widget.setNumber == 3 &&
+          scoring.tiebreakPoints != null &&
+          scoring.tiebreakPoints != scoring.pointsPerSet;
+      if (isTiebreaker) {
+        return 'Set 3 (Tiebreaker) • Play to $targetScore (win by 2)';
+      }
+      return 'Set ${widget.setNumber} of ${scoring.numberOfSets} • Play to $targetScore (win by 2)';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return AlertDialog(
+      title: Text('${widget.initialTeam1Score == null ? 'Add' : 'Edit'} Set ${widget.setNumber}'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Scoring info
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: colors.accentLight,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: colors.accent.withOpacity(0.5)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, color: colors.accent, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _getSetInfo(),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextField(
+            controller: _team1Controller,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: widget.team1Name,
+              hintText: '${widget.targetScore}',
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.sports_volleyball),
+            ),
+            autofocus: true,
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _team2Controller,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: widget.team2Name,
+              hintText: '${widget.targetScore - 2}',
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.sports_volleyball),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final team1Score = int.tryParse(_team1Controller.text);
+            final team2Score = int.tryParse(_team2Controller.text);
+
+            if (team1Score == null || team2Score == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Please enter valid scores'),
+                  backgroundColor: colors.error,
+                ),
+              );
+              return;
+            }
+
+            if (team1Score < 0 || team2Score < 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Scores must be positive'),
+                  backgroundColor: colors.error,
+                ),
+              );
+              return;
+            }
+
+            // Validate the score based on phase scoring
+            if (!widget.phaseScoring.isValidSetScore(
+              widget.setNumber,
+              team1Score,
+              team2Score,
+            )) {
+              final target = widget.targetScore;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Invalid score. Winner must reach $target and win by 2 points.',
+                  ),
+                  backgroundColor: colors.warning,
+                ),
+              );
+              return;
+            }
+
+            Navigator.of(context).pop({
+              'team1': team1Score,
+              'team2': team2Score,
+            });
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}

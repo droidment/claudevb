@@ -5,36 +5,77 @@ import '../../models/tournament.dart';
 import '../../services/tournament_service.dart';
 import '../../theme/theme.dart';
 
-class CreateTournamentScreen extends StatefulWidget {
-  const CreateTournamentScreen({super.key});
+class EditTournamentScreen extends StatefulWidget {
+  final Tournament tournament;
+
+  const EditTournamentScreen({
+    super.key,
+    required this.tournament,
+  });
 
   @override
-  State<CreateTournamentScreen> createState() => _CreateTournamentScreenState();
+  State<EditTournamentScreen> createState() => _EditTournamentScreenState();
 }
 
-class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
+class _EditTournamentScreenState extends State<EditTournamentScreen> {
   final _formKey = GlobalKey<FormState>();
   final _tournamentService = TournamentService();
 
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _locationController = TextEditingController();
-  final _venueDetailsController = TextEditingController();
-  final _maxTeamsController = TextEditingController();
-  final _minTeamSizeController = TextEditingController(text: '6');
-  final _maxTeamSizeController = TextEditingController(text: '12');
-  final _entryFeeController = TextEditingController();
+  late TextEditingController _nameController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _locationController;
+  late TextEditingController _venueDetailsController;
+  late TextEditingController _maxTeamsController;
+  late TextEditingController _minTeamSizeController;
+  late TextEditingController _maxTeamSizeController;
+  late TextEditingController _entryFeeController;
 
-  String _sportType = 'volleyball';
-  TournamentFormat _format = TournamentFormat.roundRobin;
+  late String _sportType;
+  late TournamentFormat _format;
   DateTime? _startDate;
   DateTime? _endDate;
   DateTime? _registrationDeadline;
   bool _isLoading = false;
-  bool _isPublic = true;
+  late bool _isPublic;
   double? _latitude;
   double? _longitude;
   bool _isGettingLocation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeFormWithTournamentData();
+  }
+
+  void _initializeFormWithTournamentData() {
+    final tournament = widget.tournament;
+
+    _nameController = TextEditingController(text: tournament.name);
+    _descriptionController = TextEditingController(text: tournament.description ?? '');
+    _locationController = TextEditingController(text: tournament.location ?? '');
+    _venueDetailsController = TextEditingController(text: tournament.venueDetails ?? '');
+    _maxTeamsController = TextEditingController(
+      text: tournament.maxTeams?.toString() ?? '',
+    );
+    _minTeamSizeController = TextEditingController(
+      text: tournament.minTeamSize.toString(),
+    );
+    _maxTeamSizeController = TextEditingController(
+      text: tournament.maxTeamSize.toString(),
+    );
+    _entryFeeController = TextEditingController(
+      text: tournament.entryFee?.toString() ?? '',
+    );
+
+    _sportType = tournament.sportType;
+    _format = tournament.format;
+    _startDate = tournament.startDate;
+    _endDate = tournament.endDate;
+    _registrationDeadline = tournament.registrationDeadline;
+    _isPublic = tournament.isPublic;
+    _latitude = tournament.latitude;
+    _longitude = tournament.longitude;
+  }
 
   @override
   void dispose() {
@@ -50,21 +91,38 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
   }
 
   Future<void> _selectDate(BuildContext context, String type) async {
-    final initialDate = DateTime.now().add(const Duration(days: 7));
+    DateTime? currentValue;
+    switch (type) {
+      case 'start':
+        currentValue = _startDate;
+        break;
+      case 'end':
+        currentValue = _endDate;
+        break;
+      case 'registration':
+        currentValue = _registrationDeadline;
+        break;
+    }
+
+    final initialDate = currentValue ?? DateTime.now().add(const Duration(days: 7));
     final firstDate = DateTime.now();
     final lastDate = DateTime.now().add(const Duration(days: 365));
 
     final picked = await showDatePicker(
       context: context,
-      initialDate: initialDate,
+      initialDate: initialDate.isBefore(firstDate) ? firstDate : initialDate,
       firstDate: firstDate,
       lastDate: lastDate,
     );
 
     if (picked != null) {
+      final initialTime = currentValue != null
+          ? TimeOfDay(hour: currentValue.hour, minute: currentValue.minute)
+          : const TimeOfDay(hour: 9, minute: 0);
+
       final time = await showTimePicker(
         context: context,
-        initialTime: const TimeOfDay(hour: 9, minute: 0),
+        initialTime: initialTime,
       );
 
       setState(() {
@@ -101,7 +159,6 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
     setState(() => _isGettingLocation = true);
 
     try {
-      // Check location permission
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -114,7 +171,6 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
         throw Exception('Location permission permanently denied');
       }
 
-      // Get current position
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
@@ -192,46 +248,48 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
     }
   }
 
-  Future<void> _createTournament() async {
+  Future<void> _updateTournament() async {
     if (!_formKey.currentState!.validate()) return;
 
     final colors = context.colors;
     setState(() => _isLoading = true);
 
     try {
-      await _tournamentService.createTournament(
-        name: _nameController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty
+      final updates = <String, dynamic>{
+        'name': _nameController.text.trim(),
+        'description': _descriptionController.text.trim().isEmpty
             ? null
             : _descriptionController.text.trim(),
-        sportType: _sportType,
-        format: _format,
-        startDate: _startDate,
-        endDate: _endDate,
-        registrationDeadline: _registrationDeadline,
-        location: _locationController.text.trim().isEmpty
+        'sport_type': _sportType,
+        'format': _format.dbValue,
+        'start_date': _startDate?.toIso8601String(),
+        'end_date': _endDate?.toIso8601String(),
+        'registration_deadline': _registrationDeadline?.toIso8601String(),
+        'location': _locationController.text.trim().isEmpty
             ? null
             : _locationController.text.trim(),
-        venueDetails: _venueDetailsController.text.trim().isEmpty
+        'venue_details': _venueDetailsController.text.trim().isEmpty
             ? null
             : _venueDetailsController.text.trim(),
-        maxTeams: _maxTeamsController.text.isEmpty
+        'max_teams': _maxTeamsController.text.isEmpty
             ? null
             : int.tryParse(_maxTeamsController.text),
-        minTeamSize: int.tryParse(_minTeamSizeController.text) ?? 6,
-        maxTeamSize: int.tryParse(_maxTeamSizeController.text) ?? 12,
-        entryFee: _entryFeeController.text.isEmpty
+        'min_team_size': int.tryParse(_minTeamSizeController.text) ?? 6,
+        'max_team_size': int.tryParse(_maxTeamSizeController.text) ?? 12,
+        'entry_fee': _entryFeeController.text.isEmpty
             ? null
             : double.tryParse(_entryFeeController.text),
-        isPublic: _isPublic,
-        latitude: _latitude,
-        longitude: _longitude,
-      );
+        'is_public': _isPublic,
+        'latitude': _latitude,
+        'longitude': _longitude,
+      };
+
+      await _tournamentService.updateTournament(widget.tournament.id, updates);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Tournament created successfully!'),
+            content: const Text('Tournament updated successfully!'),
             backgroundColor: colors.success,
           ),
         );
@@ -241,7 +299,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error creating tournament: $e'),
+            content: Text('Error updating tournament: $e'),
             backgroundColor: colors.error,
           ),
         );
@@ -259,7 +317,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
-        title: const Text('Create Tournament'),
+        title: const Text('Edit Tournament'),
       ),
       body: Form(
         key: _formKey,
@@ -486,7 +544,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                 ),
               ),
             ),
-            if (!_isPublic) ...[
+            if (!_isPublic && widget.tournament.inviteCode != null) ...[
               const SizedBox(height: 8),
               Card(
                 color: colors.warningLight,
@@ -494,12 +552,27 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                   padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, color: colors.warning),
+                      Icon(Icons.vpn_key, color: colors.warning),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          'An invite code will be automatically generated after creation. You can share it with teams to join.',
-                          style: TextStyle(fontSize: 12, color: colors.textPrimary),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Current Invite Code:',
+                              style: TextStyle(fontSize: 12, color: colors.textPrimary),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.tournament.inviteCode!,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 2,
+                                color: colors.textPrimary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -611,9 +684,9 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Create Button
+            // Save Button
             FilledButton.icon(
-              onPressed: _isLoading ? null : _createTournament,
+              onPressed: _isLoading ? null : _updateTournament,
               icon: _isLoading
                   ? const SizedBox(
                       width: 20,
@@ -623,8 +696,8 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : const Icon(Icons.add),
-              label: Text(_isLoading ? 'Creating...' : 'Create Tournament'),
+                  : const Icon(Icons.save),
+              label: Text(_isLoading ? 'Saving...' : 'Save Changes'),
               style: FilledButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
               ),

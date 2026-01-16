@@ -151,7 +151,7 @@ class AppThemes {
         ),
         floatingLabelStyle: TextStyle(color: AppColors.violet),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -244,7 +244,7 @@ class AppThemes {
         ),
         floatingLabelStyle: TextStyle(color: primaryBlue),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -339,7 +339,7 @@ class AppThemes {
         ),
         floatingLabelStyle: const TextStyle(color: coreNavy),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -435,7 +435,7 @@ class AppThemes {
         ),
         floatingLabelStyle: const TextStyle(color: benimidoriPurple),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 2,
         color: Colors.white,
         shape: RoundedRectangleBorder(
